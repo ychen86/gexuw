@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GEX Pro Dashboard — Unusual Whales</title>
+<!-- ── PWA hooks: makes the dashboard installable as an app ── -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="GEX UW"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0d0d0d; --bg2:#141414; --bg3:#1a1a1a; --bg4:#202020;
+  --border:#2a2a2a; --border2:#333;
+  --text:#e8e8e8; --text2:#999; --text3:#555;
+  --green:#00ff88; --green2:#00cc6a; --green-dim:rgba(0,255,136,0.08);
+  --red:#ff3333; --red2:#cc2222; --red-dim:rgba(255,51,51,0.08);
+  --amber:#2eb6c8; --amber2:#1d8a99; --amber-dim:rgba(46,182,200,0.1);
+  --blue:#4da6ff; --blue-dim:rgba(77,166,255,0.1);
+  --purple:#8a2be2;
+  --yellow:#ffe033;
+  --cyan:#00eeff;
+  --bebas:'Bebas Neue',sans-serif;
+  --mono:'Share Tech Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:15px;}
+
+/* ── SETUP BAR ── */
+.setup-bar{background:#111;border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.setup-bar label{font-size:14px;color:var(--text3);font-family:var(--mono);}
+.setup-bar input[type=text],.setup-bar input[type=password]{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:6px 12px;font-size:14px;font-family:var(--mono);color:var(--amber);outline:none;text-transform:uppercase;}
+.setup-bar input[type=text]{width:90px;font-size:16px;font-weight:700;letter-spacing:1px;}
+.setup-bar input[type=password]{flex:1;min-width:200px;color:var(--text2);text-transform:none;}
+.setup-bar input:focus{border-color:var(--amber);}
+.setup-bar select{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:6px 10px;font-size:14px;font-family:var(--mono);color:var(--text2);cursor:pointer;outline:none;}
+.sbtn{padding:6px 16px;border-radius:4px;font-size:14px;font-family:var(--mono);cursor:pointer;border:1px solid;transition:all .15s;white-space:nowrap;font-weight:700;}
+.sbtn.go{background:var(--amber);color:#000;border-color:var(--amber);}
+.sbtn.go:hover{background:#ffc533;}
+.sbtn.stop{background:transparent;color:var(--red);border-color:var(--red);}
+.sbtn.stop:hover{background:var(--red-dim);}
+.sbtn.toggle{background:transparent;color:var(--text3);border-color:var(--text3);font-size:12px;padding:6px 10px;}
+.sbtn.toggle:hover{border-color:var(--text);color:var(--text);}
+.sbtn.toggle.on{background:var(--green-dim,rgba(0,255,136,0.12));color:var(--green);border-color:var(--green);}
+.setup-bar .spacer{flex:1;}
+.live-pill{display:flex;align-items:center;gap:6px;font-size:13px;font-family:var(--mono);color:var(--text3);padding:5px 12px;border:1px solid var(--border);border-radius:20px;}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.ldot.live{background:var(--green);}
+.ldot.err{background:var(--red);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.ldot.fetching{animation:blink .7s infinite;background:var(--amber);}
+
+/* ── HERO HEADER ── */
+.hero{background:var(--bg2);border-bottom:2px solid var(--border2);padding:16px 20px;display:grid;grid-template-columns:auto 1fr repeat(3,auto);align-items:center;gap:20px;}
+@media(max-width:700px){.hero{grid-template-columns:1fr 1fr;}}
+.hero-ticker{display:flex;align-items:baseline;gap:12px;}
+.hero-sym{font-family:var(--bebas);font-size:56px;line-height:1;color:var(--red);letter-spacing:1px;}
+.whale-logo{width:54px;height:27px;color:var(--amber);align-self:center;filter:drop-shadow(0 0 8px rgba(46,182,200,0.4));}
+.uw-tag{display:inline-block;font-family:var(--mono);font-size:10px;background:var(--amber-dim);color:var(--amber);padding:2px 8px;border-radius:3px;margin-left:8px;letter-spacing:1px;font-weight:700;vertical-align:middle;}
+.hero-change{background:var(--green);color:#000;font-family:var(--mono);font-size:14px;font-weight:700;padding:4px 10px;border-radius:3px;}
+.hero-change.neg{background:var(--red);color:#fff;}
+.hero-name{font-family:var(--mono);font-size:14px;color:var(--text2);letter-spacing:1px;}
+.hero-name small{display:block;color:var(--text3);font-size:12px;margin-top:4px;}
+.hero-stat{text-align:right;}
+.hero-stat-lbl{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.hero-stat-val{font-family:var(--bebas);font-size:36px;line-height:1;letter-spacing:.5px;}
+.hero-stat-val.amber{color:var(--amber);}
+.hero-stat-val.green{color:var(--green);}
+.hero-stat-val.red{color:var(--red);}
+.hero-stat-val.white{color:var(--text);}
+
+/* ── SUB HEADER ── */
+.subhdr{background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+.subhdr-item{padding:6px 20px;border-right:1px solid var(--border);font-size:14px;font-family:var(--mono);}
+.subhdr-item:first-child{padding-left:0;}
+.subhdr-item:last-child{border-right:none;}
+.subhdr-item .si-lbl{color:var(--text3);margin-bottom:4px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}
+.subhdr-item .si-val{font-weight:700;}
+.si-val.green{color:var(--green);}
+.si-val.red{color:var(--red);}
+.si-val.amber{color:var(--amber);}
+.si-val.yellow{color:var(--yellow);}
+.si-val.cyan{color:var(--cyan);}
+
+/* ── BODY GRID ── */
+.body-grid{display:grid;grid-template-columns:250px 1fr 320px;gap:0;min-height:calc(100vh - 200px);}
+@media(max-width:1200px){.body-grid{grid-template-columns:250px 1fr 250px;}}
+@media(max-width:900px){.body-grid{grid-template-columns:1fr;}}
+
+/* ── LEFT COLUMN — LEVEL ACTION MAP ── */
+.col-left{border-right:1px solid var(--border);padding:16px 14px;display:flex;flex-direction:column;gap:8px;}
+.col-hdr{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.level-row{border-radius:4px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;position:relative;}
+.level-price{font-family:var(--bebas);font-size:22px;letter-spacing:.5px;min-width:65px;}
+.level-label{font-family:var(--mono);font-size:13px;flex:1;}
+.level-tag{font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 8px;border-radius:3px;border:1px solid;white-space:nowrap;cursor:default;}
+/* Row types */
+.lr-extended{background:rgba(255,170,0,0.05);border:1px solid rgba(255,170,0,0.15);}
+.lr-extended .level-price{color:var(--amber);}
+.lr-ceiling .level-tag{background:var(--amber);color:#000;border-color:var(--amber);}
+.lr-spot{background:rgba(77,166,255,0.07);border:1px solid rgba(77,166,255,0.2);}
+.lr-spot .level-price{color:var(--blue);}
+.lr-spot .level-tag{background:transparent;color:var(--blue);border-color:var(--blue);}
+.lr-magnet{background:rgba(255,170,0,0.12);border:1px solid rgba(255,170,0,0.35);}
+.lr-magnet .level-price{color:var(--amber);}
+.lr-magnet .level-tag{background:var(--green);color:#000;border-color:var(--green);}
+.lr-noman{background:rgba(255,255,255,0.02);border:1px solid var(--border);}
+.lr-noman .level-price{color:var(--text3);}
+.lr-noman .level-tag{background:transparent;color:var(--text3);border-color:var(--text3);}
+.lr-minmove{background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);}
+.lr-minmove .level-price{color:var(--green);}
+.lr-minmove .level-tag{background:var(--green);color:#000;border-color:var(--green);}
+.lr-flipzone{background:rgba(255,255,255,0.03);border:1px dashed rgba(255,170,0,0.3);}
+.lr-flipzone .level-price{color:var(--text2);}
+.lr-flipzone .level-tag{background:transparent;color:var(--amber);border-color:var(--amber);}
+.lr-flip{background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.3);}
+.lr-flip .level-price{color:var(--amber);}
+.lr-flip .level-tag{background:transparent;color:var(--amber);border-color:var(--amber);}
+.lr-putwall{background:rgba(255,51,51,0.08);border:1px solid rgba(255,51,51,0.3);}
+.lr-putwall .level-price{color:var(--red);}
+.lr-putwall .level-tag{background:var(--green);color:#000;border-color:var(--green);}
+.lr-breakdown{background:rgba(255,51,51,0.15);border:1px solid var(--red);}
+.lr-breakdown .level-price{color:var(--red);}
+.lr-breakdown .level-tag{background:var(--red);color:#fff;border-color:var(--red);}
+.neg-gex-warning{background:rgba(255,51,51,0.06);border:1px solid rgba(255,51,51,0.2);border-radius:4px;padding:9px 12px;font-family:var(--mono);font-size:12px;color:var(--red);line-height:1.6;margin-top:6px;}
+.neg-gex-warning strong{color:var(--red);}
+/* ── CONFLUENCE CHECK ── */
+.conf-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:4px;margin-bottom:5px;font-family:var(--mono);font-size:12px;border:1px solid;}
+.conf-row.agree{background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.25);}
+.conf-row.diverge{background:rgba(255,170,0,0.07);border-color:rgba(255,170,0,0.3);}
+.conf-name{color:var(--text2);min-width:62px;font-weight:600;}
+.conf-price{font-family:var(--bebas);font-size:18px;letter-spacing:.5px;min-width:54px;}
+.conf-row.agree .conf-price{color:var(--green);}
+.conf-row.diverge .conf-price{color:var(--amber);}
+.conf-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;}
+.conf-row.agree .conf-badge{background:var(--green);color:#000;}
+.conf-row.diverge .conf-badge{background:var(--amber);color:#000;}
+.conf-detail{flex:1;text-align:right;color:var(--text3);font-size:12px;line-height:1.3;}
+.conf-note{font-family:var(--mono);font-size:12px;color:var(--text3);line-height:1.5;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+
+/* ── CENTER COLUMN ── */
+.col-center{display:flex;flex-direction:column;border-right:1px solid var(--border); overflow: hidden;}
+.center-hdr{padding:12px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;}
+
+/* GEX profile panel */
+.gex-profile{padding:16px 18px; display:flex; flex-direction:column; gap:16px;}
+.gex-summary-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+.gex-sum-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 14px;text-align:center;}
+.gex-sum-lbl{font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.gex-sum-val{font-family:var(--bebas);font-size:28px;letter-spacing:.5px;}
+.gex-sum-val.amber{color:var(--amber);}
+.gex-sum-val.green{color:var(--green);}
+.gex-sum-val.red{color:var(--red);}
+.gex-sum-val.white{color:var(--text);}
+
+/* NEW CHARTS ROW: Splitting Bar Chart and HeatSeeker */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:1000px){.charts-row{grid-template-columns:1fr;}}
+.chart-half{display:flex;flex-direction:column;gap:10px; min-width: 0;}
+.svp-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px; display:flex; justify-content:space-between; align-items:center;}
+.svp-chart-wrap{position:relative;width:100%;height:320px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;}
+.svp-chart-wrap canvas{width:100%!important;}
+
+/* HEAVY FLOW card (between summary cards and charts) */
+.heavy-flow-card{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px 16px;margin:12px 0;display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.hf-label{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:1px;flex-shrink:0;}
+.hf-value{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text2);text-align:right;flex:1;}
+.hf-value.bull{color:var(--green);}
+.hf-value.bear{color:var(--red);}
+.hf-value.mixed{color:var(--yellow);}
+
+/* NET FLOW chart section */
+.net-flow-section{margin-top:16px;}
+.net-flow-wrap{position:relative;width:100%;height:280px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:8px;}
+.net-flow-wrap canvas{width:100%!important;}
+
+/* NET FLOW aggregate stats strip */
+.nf-stats-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+.nf-stats-row{display:flex;flex-wrap:wrap;gap:18px;align-items:baseline;font-family:var(--mono);font-size:13px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.nf-stat{display:flex;gap:6px;align-items:baseline;}
+.nf-stat-lbl{color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+.nf-stat-val{color:var(--text);font-weight:700;}
+.nf-stat-val.pos{color:var(--green);}
+.nf-stat-val.neg{color:var(--red);}
+
+.nf-breakdown-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-family:var(--mono);font-size:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.nf-bd{display:flex;align-items:center;justify-content:center;gap:8px;}
+.nf-bd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.nf-bd-dot.bull{background:var(--green);}
+.nf-bd-dot.bear{background:var(--red);}
+/* Specific dot colors matching the chart arrow scheme */
+.nf-bd-dot.call-buy{background:#00ff88;}    /* green */
+.nf-bd-dot.call-sell{background:#ffe033;}   /* yellow */
+.nf-bd-dot.put-buy{background:#ff3333;}     /* red */
+.nf-bd-dot.put-sell{background:#8a2be2;}    /* purple */
+.nf-bd-lbl{color:var(--text3);}
+.nf-bd-val{color:var(--text);font-weight:700;}
+
+.nf-sent-row{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;}
+.nf-sent-lbl{color:var(--text3);font-size:11px;letter-spacing:.5px;flex-shrink:0;}
+.nf-sent-bar-wrap{flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex;background:var(--bg4);min-width:120px;}
+.nf-sent-bar-bear{background:var(--red);height:100%;transition:width .4s ease;}
+.nf-sent-bar-bull{background:var(--green);height:100%;transition:width .4s ease;}
+.nf-sent-pct{font-size:11px;flex-shrink:0;}
+.nf-sent-pct .bear{color:var(--red);font-weight:700;}
+.nf-sent-pct .bull{color:var(--green);font-weight:700;}
+
+/* HEATSEEKER MATRIX */
+.hs-wrap{height:320px; overflow-y:auto; background:var(--bg3); border:1px solid var(--border); border-radius:4px;}
+.hs-wrap::-webkit-scrollbar{width:6px; height:6px;}
+.hs-wrap::-webkit-scrollbar-thumb{background:var(--border2); border-radius:3px;}
+.hs-table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px;}
+.hs-table th, .hs-table td{padding:5px 8px; text-align:right; border:1px solid rgba(255,255,255,0.05); white-space:nowrap;}
+.hs-table th{position:sticky; top:0; background:#111; z-index:10; color:var(--text3); border-bottom:1px solid var(--border2);}
+.hs-table td.strike-col{position:sticky; left:0; background:#181818; z-index:5; font-weight:700; color:var(--text); text-align:left; border-right:1px solid var(--border2);}
+.hs-btn{background:transparent; border:1px solid var(--amber); color:var(--amber); padding:2px 8px; border-radius:3px; cursor:pointer; font-size:10px; font-weight:700; transition:0.2s;}
+.hs-btn:hover{background:var(--amber-dim);}
+.hs-btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+/* pro insight */
+.pro-insight{background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin:0 18px 16px 18px;padding:14px 16px;}
+.pi-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.pi-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:14px;}
+.pi-row:last-child{border-bottom:none;}
+.pi-key{color:var(--text3);}
+.pi-val{font-weight:700;text-align:right;}
+.pi-val.green{color:var(--green);}
+.pi-val.red{color:var(--red);}
+.pi-val.amber{color:var(--amber);}
+.pi-val.yellow{color:var(--yellow);}
+
+/* daily breakdown */
+.days-strip{padding:12px 18px;border-top:1px solid var(--border);}
+.days-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.day-card{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
+.day-card:hover{border-color:var(--amber);}
+.day-card.active{border-color:var(--amber);background:var(--amber-dim);}
+.day-card.is-opex{border-color:rgba(187,136,255,0.4);}
+.day-card.is-opex.active{background:rgba(187,136,255,0.08);}
+.dc-name{font-size:12px;font-family:var(--mono);color:var(--text3);margin-bottom:2px;}
+.dc-date{font-size:15px;font-weight:700;font-family:var(--bebas);color:var(--text);letter-spacing:.5px;margin-bottom:4px;}
+.dc-flip{font-size:12px;font-family:var(--mono);color:var(--amber);}
+.dc-badge{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:3px;font-size:11px;font-family:var(--mono);}
+.dc-badge.pos{background:var(--green-dim);color:var(--green);}
+.dc-badge.neg{background:var(--red-dim);color:var(--red);}
+.dc-badge.unk{background:var(--bg4);color:var(--text3);}
+.opex-pin{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--purple);color:#fff;font-size:10px;font-family:var(--mono);padding:2px 6px;border-radius:3px;font-weight:700;white-space:nowrap;}
+
+/* ── RIGHT COLUMN — TRADE SCENARIOS ── */
+.col-right{padding:16px 16px;display:flex;flex-direction:column;gap:12px;}
+.ts-hdr{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+.scenario-block{border-radius:5px;padding:14px;border:1px solid;}
+.scenario-block.bull{border-color:rgba(0,255,136,0.25);background:var(--green-dim);}
+.scenario-block.bear{border-color:rgba(255,51,51,0.25);background:var(--red-dim);}
+.scenario-block.chop{border-color:rgba(77,166,255,0.25);background:var(--blue-dim);}
+.sb-title{font-family:var(--bebas);font-size:20px;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.bull .sb-title{color:var(--green);}
+.bear .sb-title{color:var(--red);}
+.chop .sb-title{color:var(--blue);}
+.sb-row{font-family:var(--mono);font-size:13px;color:var(--text2);margin-bottom:6px;line-height:1.5;display:flex;gap:6px;}
+.sb-row .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.bull .sb-row .dot{background:var(--green);}
+.bear .sb-row .dot{background:var(--red);}
+.chop .sb-row .dot{background:var(--blue);}
+.sb-row.highlight{color:var(--text);}
+.sb-row.hi-green{color:var(--green);}
+.sb-row.hi-red{color:var(--red);}
+.sb-row.hi-amber{color:var(--amber);}
+.sb-invalid{font-family:var(--mono);font-size:12px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);}
+.bull .sb-invalid{color:rgba(0,255,136,0.5);}
+.bear .sb-invalid{color:rgba(255,51,51,0.5);}
+
+/* entry window */
+.entry-window{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:12px 14px;}
+.ew-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.ew-row{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:13px;margin-bottom:6px;}
+.ew-time{color:var(--amber);font-weight:700;}
+.ew-note{color:var(--text2);font-size:12px;}
+.ew-signal{font-size:12px;color:var(--text3);margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
+.ew-signal strong{color:var(--amber);}
+
+/* activity log */
+.log-panel{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px 12px;max-height:100px;overflow-y:auto;font-size:12px;font-family:var(--mono);color:var(--text3);line-height:1.8;flex-shrink:0;}
+.log-panel p{margin:0;}
+.log-panel p.ok{color:var(--green);}
+.log-panel p.err{color:var(--red);}
+.log-panel p.info{color:var(--amber);}
+
+/* ── BOTTOM — 3PM SWING SECTION ── */
+.swing-section{background:#111;border-top:2px solid var(--amber);padding:16px 20px;}
+.swing-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+.swing-hdr-left{font-family:var(--bebas);font-size:24px;color:var(--green);letter-spacing:.5px;}
+.swing-hdr-left small{display:block;font-family:var(--mono);font-size:12px;color:var(--text3);font-weight:400;letter-spacing:1px;margin-top:4px;}
+.swing-hdr-right{font-family:var(--mono);font-size:13px;color:var(--text3);}
+.swing-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+@media(max-width:700px){.swing-cards{grid-template-columns:repeat(2,1fr);}}
+.sw-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px;}
+.sw-price{font-family:var(--mono);font-size:13px;color:var(--text2);margin-bottom:6px;}
+.sw-price strong{color:var(--text);}
+.sw-action{border-radius:4px;padding:12px;text-align:center;font-family:var(--bebas);font-size:20px;letter-spacing:.5px;cursor:default;margin-bottom:10px;}
+.sw-action.buy-call{background:var(--green);color:#000;}
+.sw-action.buy-call-agg{background:transparent;border:2px solid var(--green);color:var(--green);}
+.sw-action.buy-put{background:var(--red);color:#fff;}
+.sw-action.buy-put-agg{background:transparent;border:2px solid var(--red);color:var(--red);}
+.sw-detail{font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.7;}
+.sw-detail .red{color:var(--red);}
+.sw-detail .green{color:var(--green);}
+.sw-detail .amber{color:var(--amber);}
+
+/* bottom info row */
+.bottom-row{background:var(--bg2);border-top:1px solid var(--border);padding:12px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+@media(max-width:600px){.bottom-row{grid-template-columns:1fr;}}
+.br-section{font-family:var(--mono);font-size:13px;}
+.br-title{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.br-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+.br-key{color:var(--text3);}
+.br-val{font-weight:700;}
+.br-val.green{color:var(--green);}
+.br-val.red{color:var(--red);}
+.br-val.amber{color:var(--amber);}
+.br-val.yellow{color:var(--yellow);}
+.br-warning{background:var(--red-dim);border:1px solid rgba(255,51,51,0.3);border-radius:4px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--red);line-height:1.6;}
+.br-warning strong{color:var(--red);}
+</style>
+</head>
+<body>
+
+<div class="setup-bar">
+  <label>TICKER:</label>
+  <input type="text" id="ticker-input" value="AMD" maxlength="6" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')startDash()"/>
+  <label>API KEY:</label>
+  <input type="password" id="api-key" placeholder="Unusual Whales API token" autocomplete="off"/>
+  <label>REFRESH:</label>
+  <select id="interval-sel">
+    <option value="300">5 min</option>
+    <option value="600">10 min</option>
+    <option value="900">15 min</option>
+    <option value="1800" selected>30 min</option>
+    <option value="3600">60 min</option>
+  </select>
+  <label>EXPIRY:</label>
+  <select id="expiry-sel" onchange="onExpirySel()"></select>
+  <button class="sbtn go" onclick="startDash()">▶ START</button>
+  <button class="sbtn stop" id="stop-btn" onclick="stopDash()" style="display:none">■ STOP</button>
+  <div class="spacer"></div>
+  <span id="countdown-txt" style="font-size:13px;font-family:var(--mono);color:var(--text3);"></span>
+  <span id="last-fetch" style="font-size:13px;font-family:var(--mono);color:var(--text3);">—</span>
+  <div class="live-pill"><div class="ldot" id="live-dot"></div><span id="live-txt">OFFLINE</span></div>
+</div>
+
+<div class="hero">
+  <div class="hero-ticker">
+    <!-- Whale logo (UW branding) -->
+    <svg class="whale-logo" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg" aria-label="Unusual Whales">
+      <path d="M 4,18 C 1,15 1,9 6,8 C 9,7.5 12,9 13,11 C 16,7 22,5 30,5 C 44,5 54,11 56,17 L 60,13 L 58,19 L 60,25 L 54,21 C 52,25 44,27 30,27 C 22,27 16,25 13,21 C 11,23 4,23 4,18 Z" fill="currentColor" opacity="0.95"/>
+      <circle cx="46" cy="14" r="1.6" fill="#0a0a0a"/>
+    </svg>
+    <div class="hero-sym" id="h-sym">AMD</div>
+    <div class="hero-change" id="h-change">—</div>
+  </div>
+  <div>
+    <div class="hero-name" id="h-name">ADVANCED MICRO DEVICES <span class="uw-tag">🐋 UW</span></div>
+    <div class="hero-name"><small id="h-sub">GEX READ + TRADE PLAN — WEEKLY <span id="h-week-label">MAY 11, 2026</span></small></div>
+  </div>
+  <div class="hero-stat">
+    <div class="hero-stat-lbl">CONTROL NODE</div>
+    <div class="hero-stat-val amber" id="h-magnet">—</div>
+  </div>
+  <div class="hero-stat">
+    <div class="hero-stat-lbl">TOTAL NET GEX</div>
+    <div class="hero-stat-val green" id="h-netgex">—</div>
+  </div>
+  <div class="hero-stat">
+    <div class="hero-stat-lbl">CURRENT PRICE</div>
+    <div class="hero-stat-val white" id="h-price">—</div>
+  </div>
+</div>
+
+<div class="subhdr">
+  <div class="subhdr-item"><div class="si-lbl">DATE</div><div class="si-val" id="sh-date">—</div></div>
+  <div class="subhdr-item"><div class="si-lbl">TREND</div><div class="si-val green" id="sh-trend">—</div></div>
+  <div class="subhdr-item"><div class="si-lbl">EXPECTED MOVE</div><div class="si-val amber" id="sh-expmove">—</div></div>
+  <div class="subhdr-item"><div class="si-lbl">RANGE</div><div class="si-val" id="sh-range">—</div></div>
+  <div class="subhdr-item"><div class="si-lbl">GAMMA FLIP</div><div class="si-val yellow" id="sh-flip">—</div></div>
+  <div class="subhdr-item"><div class="si-lbl">LOCAL TIME</div><div class="si-val cyan" id="live-clock">--:--:--</div></div>
+</div>
+
+<div class="body-grid">
+
+  <div class="col-left">
+    <div class="col-hdr">▸ LEVEL ACTION MAP</div>
+    <div id="level-map">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--text3);padding:24px 0;text-align:center;">Waiting for data...</div>
+    </div>
+    <div class="col-hdr" style="margin-top:14px;">▸ CONFLUENCE CHECK</div>
+    <div id="confluence-strip">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text3);padding:12px 0;text-align:center;line-height:1.6;">Click <strong style="color:var(--amber);">⚡ FETCH ALL 5</strong> to compare<br>single-expiry vs all-expiry levels.</div>
+    </div>
+  </div>
+
+  <div class="col-center">
+    <div class="center-hdr">▸ GEX PROFILE + DEALER ZONES</div>
+
+    <div class="gex-profile">
+      <div class="gex-summary-row">
+        <div class="gex-sum-card">
+          <div class="gex-sum-lbl">CONTROL NODE / MAGNET</div>
+          <div class="gex-sum-val amber" id="gc-magnet">—</div>
+        </div>
+        <div class="gex-sum-card">
+          <div class="gex-sum-lbl">NET GEX</div>
+          <div class="gex-sum-val green" id="gc-netgex">—</div>
+        </div>
+        <div class="gex-sum-card">
+          <div class="gex-sum-lbl">CALL WALL</div>
+          <div class="gex-sum-val green" id="gc-cwall">—</div>
+        </div>
+        <div class="gex-sum-card">
+          <div class="gex-sum-lbl">PUT WALL</div>
+          <div class="gex-sum-val red" id="gc-pwall">—</div>
+        </div>
+      </div>
+
+      <!-- Heavy Flow indicator (moved from Pro Insight) -->
+      <div class="heavy-flow-card" id="heavy-flow-card">
+        <div class="hf-label">HEAVY FLOW (CALLS vs PUTS)</div>
+        <div class="hf-value" id="hf-value">Waiting for flow data...</div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-half">
+          <div class="svp-title">STRIKE VOLUME PROFILE</div>
+          <div class="svp-chart-wrap">
+            <canvas id="gex-chart" role="img" aria-label="GEX per-strike bar chart">GEX chart loads after data fetch.</canvas>
+          </div>
+        </div>
+        <div class="chart-half">
+          <div class="svp-title">
+            <span>HEATSEEKER MATRIX</span>
+            <button class="hs-btn" id="btn-heatseeker" onclick="fetchHeatseeker()">⚡ FETCH ALL 5 (5 CREDITS)</button>
+          </div>
+          <div class="hs-wrap">
+            <table class="hs-table" id="hs-table">
+              <thead><tr id="hs-head"><th>Strike</th></tr></thead>
+              <tbody id="hs-body"><tr><td style="text-align:center; padding:30px;">Click fetch to load map</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Flow intraday chart -->
+      <div class="net-flow-section">
+        <div class="svp-title">
+          <span>NET FLOW — INTRADAY OPTIONS PREMIUM (<span id="nf-ticker-lbl">—</span>)</span>
+          <span style="display:flex;align-items:center;gap:10px;">
+            <span id="nf-status" style="font-family:var(--mono);font-size:11px;color:var(--text3);">—</span>
+            <button class="hs-btn" id="btn-nf-refresh" onclick="refreshNetFlow()" title="Refresh net flow data (3 credits: ticks + volume + flow)">↻ REFRESH</button>
+          </span>
+        </div>
+
+        <!-- Aggregate stats strip -->
+        <div class="nf-stats-wrap">
+          <div class="nf-stats-row">
+            <div class="nf-stat"><span class="nf-stat-lbl">Vol</span><span class="nf-stat-val" id="nf-vol">—</span></div>
+            <div class="nf-stat"><span class="nf-stat-lbl">Prem</span><span class="nf-stat-val" id="nf-prem">—</span></div>
+            <div class="nf-stat"><span class="nf-stat-lbl">Net</span><span class="nf-stat-val" id="nf-net">—</span></div>
+            <div class="nf-stat"><span class="nf-stat-lbl">NCP</span><span class="nf-stat-val" id="nf-ncp">—</span></div>
+            <div class="nf-stat"><span class="nf-stat-lbl">NPP</span><span class="nf-stat-val" id="nf-npp">—</span></div>
+          </div>
+          <div class="nf-breakdown-row">
+            <div class="nf-bd"><span class="nf-bd-dot call-buy"></span><span class="nf-bd-lbl">Call Bought</span><span class="nf-bd-val" id="nf-call-bought">—</span></div>
+            <div class="nf-bd"><span class="nf-bd-dot call-sell"></span><span class="nf-bd-lbl">Call Sold</span><span class="nf-bd-val" id="nf-call-sold">—</span></div>
+            <div class="nf-bd"><span class="nf-bd-dot put-buy"></span><span class="nf-bd-lbl">Put Bought</span><span class="nf-bd-val" id="nf-put-bought">—</span></div>
+            <div class="nf-bd"><span class="nf-bd-dot put-sell"></span><span class="nf-bd-lbl">Put Sold</span><span class="nf-bd-val" id="nf-put-sold">—</span></div>
+          </div>
+          <div class="nf-sent-row">
+            <span class="nf-sent-lbl">NET SENTIMENT</span>
+            <div class="nf-sent-bar-wrap">
+              <div class="nf-sent-bar-bear" id="nf-sent-bear-bar"></div>
+              <div class="nf-sent-bar-bull" id="nf-sent-bull-bar"></div>
+            </div>
+            <span class="nf-sent-pct"><span class="bear" id="nf-sent-bear-lbl">Bearish —</span> · <span class="bull" id="nf-sent-bull-lbl">Bullish —</span></span>
+          </div>
+        </div>
+
+        <div class="net-flow-wrap">
+          <canvas id="net-flow-chart" role="img" aria-label="Net premium flow line chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="days-strip">
+      <div class="col-hdr" style="margin-bottom:10px;">▸ WEEKLY BREAKDOWN — 5 expirations — click to load</div>
+      <div class="days-row" id="days-row"></div>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="ts-hdr">▸ PRO INSIGHT</div>
+    <div class="pro-insight">
+      <div class="pi-title">PRO INSIGHT — <span id="pi-ticker-lbl">TICKER</span> READ</div>
+      <div class="pi-row"><span class="pi-key">Price closed Friday</span><span class="pi-val amber" id="pi-close">—</span></div>
+      <div class="pi-row"><span class="pi-key">Magnet / Pin</span><span class="pi-val amber" id="pi-magnet">—</span></div>
+      <div class="pi-row"><span class="pi-key">Call Wall — never chase</span><span class="pi-val red" id="pi-cwall">— = EXIT ONLY</span></div>
+      <div class="pi-row"><span class="pi-key">Put Wall — massive floor</span><span class="pi-val green" id="pi-pwall">— = BUY CALLS</span></div>
+      <div class="pi-row"><span class="pi-key">Trap Door</span><span class="pi-val amber" id="pi-trap">—</span></div>
+      <div class="pi-row"><span class="pi-key">Neg GEX Zone</span><span class="pi-val red" id="pi-negzone">—</span></div>
+      <div class="pi-row"><span class="pi-key">Monday bias</span><span class="pi-val yellow" id="pi-bias">Waiting for data...</span></div>
+    </div>
+    <div class="entry-window">
+      <div class="ew-title">ENTRY WINDOW RULES</div>
+      <div class="ew-row">
+        <span class="ew-time">9:30–9:45</span>
+        <span class="ew-note" id="ew-open">NO TOUCH — wait for structure</span>
+      </div>
+      <div class="ew-row">
+        <span class="ew-time">9:45–10:30</span>
+        <span class="ew-note" id="ew-prime">Wait for pullback to magnet only</span>
+      </div>
+      <div class="ew-signal">Signal needed: <strong id="ew-signal">— touch + green candle + flow</strong></div>
+    </div>
+    <div class="log-panel" id="log-panel">
+      <p class="info">[ Ready — enter ticker + API key, click START ]</p>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-row">
+  <div class="br-section">
+    <div class="br-title">MONDAY FOCUS</div>
+    <div class="br-row"><span class="br-key">Context:</span><span class="br-val amber" id="bf-context">—</span></div>
+    <div class="br-row"><span class="br-key">Magnet:</span><span class="br-val green" id="bf-magnet">— = best call entry</span></div>
+    <div class="br-row"><span class="br-key">Action:</span><span class="br-val" id="bf-action">Do NOT chase the gap up open</span></div>
+  </div>
+  <div class="br-section">
+    <div class="br-title">WATCH LEVELS</div>
+    <div class="br-row"><span class="br-key">Up:</span><span class="br-val green" id="wl-up">—</span></div>
+    <div class="br-row"><span class="br-key">Down:</span><span class="br-val red" id="wl-down">—</span></div>
+    <div class="br-row"><span class="br-key">Neg GEX:</span><span class="br-val red" id="wl-negzone">—</span></div>
+  </div>
+  <div class="br-section">
+    <div class="br-title">KEY WARNING</div>
+    <div class="br-warning" id="br-warning"><strong>⚠ Waiting for data</strong><br>Enter API key and click START.</div>
+  </div>
+</div>
+
+<script>
+
+// ────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────
+let gexChart = null, timer = null, countdown = null, countdownSec = 0;
+let prevData = {}, dayCache = {}, currentExpiry = '', currentDayId = '';
+let activeExpiries = [];
+
+// ────────────────────────────────────────────
+// UTILS
+// ────────────────────────────────────────────
+const fp  = v => (v != null && !isNaN(v)) ? '$' + Number(v).toFixed(0) : '—';
+const fp2 = v => (v != null && !isNaN(v)) ? '$' + Number(v).toFixed(2) : '—';
+const fgex = v => {
+  if (v == null || isNaN(v)) return '—';
+  const a = Math.abs(v), s = v < 0 ? '-' : '+';
+  if (a >= 1e9) return s + '$' + (a/1e9).toFixed(2) + 'B';
+  if (a >= 1e6) return s + '$' + (a/1e6).toFixed(2) + 'M';
+  return s + '$' + Math.round(a).toLocaleString();
+};
+const fnumK = v => {
+  if (v == null || isNaN(v)) return '$0.0K';
+  const a = Math.abs(v), s = v < 0 ? '-' : '';
+  return s + '$' + (a/1000).toFixed(1) + 'K';
+};
+
+const setEl = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+
+// ── Derive call wall & put wall from strikes when API doesn't return them ──
+function deriveWalls(data) {
+  // Handle object form {strike:N}, plain number, or null
+  let cwall = (data.call_wall != null)
+    ? (typeof data.call_wall === 'object' ? data.call_wall.strike : data.call_wall)
+    : null;
+  let pwall = (data.put_wall != null)
+    ? (typeof data.put_wall === 'object' ? data.put_wall.strike : data.put_wall)
+    : null;
+
+  // Fall back: compute from strikes array if still null
+  if ((!cwall || !pwall) && data.strikes?.length) {
+    let maxPos = -Infinity, maxNeg = Infinity;
+    let cwallS = null, pwallS = null;
+    data.strikes.forEach(s => {
+      if (s.net_gex > maxPos) { maxPos = s.net_gex; cwallS = s.strike; }
+      if (s.net_gex < maxNeg) { maxNeg = s.net_gex; pwallS = s.strike; }
+    });
+    if (!cwall && cwallS != null) cwall = cwallS;
+    if (!pwall && pwallS != null) pwall = pwallS;
+  }
+  return { cwall, pwall };
+}
+
+// ── Derive REAL trade levels from the HeatSeeker (strikes array) ──
+// This is the source of truth. Each strike has real options open interest concentration.
+// We extract the actual pin levels rather than relying on calculated approximations.
+function deriveLevelsFromHeatseeker(data) {
+  if (!data?.strikes?.length) return null;
+  const price = data.underlying_price || 0;
+  if (!price) return null;
+
+  const strikes = data.strikes;
+
+  // Constrain wall/pin search to ±15% of spot. Far-OTM strikes with small GEX shouldn't
+  // be elevated to "the call wall" or "the put wall" — those are meaningful trading levels
+  // that should sit near the action, not way out in dust-OI territory.
+  const bandLo = price * 0.85;
+  const bandHi = price * 1.15;
+  const inBand = (s) => s.strike >= bandLo && s.strike <= bandHi;
+
+  // Sort positive GEX strikes by GEX value descending (biggest concentration first)
+  const pos = strikes.filter(s => s.net_gex > 0 && inBand(s)).sort((a, b) => b.net_gex - a.net_gex);
+  // Sort negative GEX strikes by GEX value ascending (most negative / biggest put concentration first)
+  const neg = strikes.filter(s => s.net_gex < 0 && inBand(s)).sort((a, b) => a.net_gex - b.net_gex);
+
+  // Above vs below current price
+  const posAbove = pos.filter(s => s.strike > price);
+  const posBelow = pos.filter(s => s.strike <= price);
+  const negBelow = neg.filter(s => s.strike < price);
+
+  // PRIMARY MAGNET = strike with the single highest positive GEX within the band
+  // This is where price is most strongly pulled (the real "control node")
+  const magnet = pos[0]?.strike ?? null;
+
+  // PINS BELOW PRICE — top 3 positive-GEX strikes that act as support magnets
+  const pin1 = posBelow[0]?.strike ?? null;  // strongest support / primary pullback target
+  const pin2 = posBelow[1]?.strike ?? null;  // 2nd support / aggressive buy zone
+  const pin3 = posBelow[2]?.strike ?? null;  // 3rd support
+
+  // CALL WALL = strongest positive-GEX strike ABOVE current price (real resistance)
+  const callWall = posAbove[0]?.strike ?? null;
+
+  // PUT WALL = strongest negative-GEX strike BELOW current price (real floor)
+  const putWall = negBelow[0]?.strike ?? null;
+
+  // BREAKDOWN = 2nd most negative GEX below price (acceleration zone past put wall)
+  const breakdown = negBelow[1]?.strike ?? null;
+
+  // CEILING above spot: real call wall if it exists above price,
+  // otherwise mirror the distance from price to pin1 above spot (squeeze extension)
+  const distanceDown = pin1 ? price - pin1 : price * 0.038;
+  const ceilAbove = callWall ?? (price + distanceDown);
+
+  return { magnet, pin1, pin2, pin3, callWall, putWall, breakdown, ceilAbove };
+}
+
+// ────────────────────────────────────────────
+// ALL-EXPIRY AGGREGATION (Tier 1) + CONFLUENCE CHECK (Tier 3)
+// ────────────────────────────────────────────
+// Build a single synthetic "data" object whose strikes array is the SUM of
+// net_gex across every cached expiry for this ticker. Feeds deriveLevelsFromHeatseeker
+// to produce all-expiry structural levels (Method B).
+function aggregateAllExpiries(ticker, price) {
+  const agg = {};               // strike → summed net_gex
+  let cachedCount = 0;
+
+  activeExpiries.forEach(exp => {
+    const d = dayCache[ticker + exp];
+    if (d && d.strikes && d.strikes.length) {
+      cachedCount++;
+      d.strikes.forEach(s => {
+        agg[s.strike] = (agg[s.strike] || 0) + s.net_gex;
+      });
+    }
+  });
+
+  // Need at least 2 expiries cached for "all-expiry" to mean anything
+  if (cachedCount < 2) return { ok: false, cachedCount };
+
+  const strikes = Object.keys(agg)
+    .map(k => ({ strike: parseFloat(k), net_gex: agg[k] }))
+    .sort((a, b) => a.strike - b.strike);
+
+  return {
+    ok: true,
+    cachedCount,
+    data: { underlying_price: price, strikes }
+  };
+}
+
+// Compare a single-expiry level (Method A) against the all-expiry level (Method B).
+// Returns { agree, diff, pct } — agree=true when they're within the ticker-scaled tolerance.
+function compareLevels(levelA, levelB, price, isIndex) {
+  if (levelA == null || levelB == null || !price) return null;
+  const diff = Math.abs(levelA - levelB);
+  const pct = (diff / price) * 100;
+  // Indices trade tighter strike spacing relative to price → tolerance ~0.35%.
+  // Individual stocks have wider relative spacing → tolerance ~1.0%.
+  const tol = isIndex ? 0.35 : 1.0;
+  return { agree: pct <= tol, diff, pct, levelA, levelB };
+}
+
+// Render the confluence strip in the left column.
+function buildConfluenceStrip(singleData, ticker, price) {
+  const el = document.getElementById('confluence-strip');
+  if (!el) return;
+
+  const agg = aggregateAllExpiries(ticker, price);
+  if (!agg.ok) {
+    el.innerHTML = `<div style="font-family:var(--mono);font-size:12px;color:var(--text3);padding:12px 0;text-align:center;line-height:1.6;">⚠ Confluence needs all 5 expirations.<br>Currently ${agg.cachedCount} loaded — click <strong style="color:var(--amber);">⚡ FETCH ALL 5</strong>.</div>`;
+    return;
+  }
+
+  // Method A — single (current) expiry levels
+  const A = deriveLevelsFromHeatseeker(singleData);
+  // Method B — all-expiry aggregated levels
+  const B = deriveLevelsFromHeatseeker(agg.data);
+  if (!A || !B) {
+    el.innerHTML = `<div style="font-family:var(--mono);font-size:12px;color:var(--text3);padding:12px 0;text-align:center;">Not enough strike data to compare.</div>`;
+    return;
+  }
+
+  // Detect index vs individual stock for tolerance scaling
+  const idxSet = ['SPY','SPX','SPXW','QQQ','IWM','DIA','NDX','RUT','XSP'];
+  const isIndex = idxSet.includes(ticker.toUpperCase());
+
+  const rows = [
+    { name: 'Magnet',    a: A.magnet,   b: B.magnet   },
+    { name: 'Call Wall', a: A.callWall, b: B.callWall },
+    { name: 'Put Wall',  a: A.putWall,  b: B.putWall  }
+  ];
+
+  let html = '';
+  let agreeCount = 0, totalCount = 0;
+
+  rows.forEach(r => {
+    const cmp = compareLevels(r.a, r.b, price, isIndex);
+    if (!cmp) return;
+    totalCount++;
+    const cls = cmp.agree ? 'agree' : 'diverge';
+    const badge = cmp.agree ? '✓ CONFLUENCE' : '⚠ DIVERGE';
+    if (cmp.agree) agreeCount++;
+
+    // On agreement, show the single value. On divergence, show both.
+    const detail = cmp.agree
+      ? `single &amp; all-expiry agree`
+      : `single ${fp(cmp.levelA)} · all-exp ${fp(cmp.levelB)}`;
+
+    // Use the all-expiry value as the "headline" price on agreement (structural truth);
+    // on divergence show the single-expiry (the level you'd trade today) as headline.
+    const headline = cmp.agree ? cmp.levelB : cmp.levelA;
+
+    html += `
+      <div class="conf-row ${cls}">
+        <div class="conf-price">${fp(headline)}</div>
+        <div class="conf-name">${r.name}</div>
+        <div class="conf-badge">${badge}</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text2);margin:-2px 0 7px 4px;">${detail}</div>`;
+  });
+
+  // Summary note
+  const note = (agreeCount === totalCount)
+    ? `<span style="color:var(--green);">All ${totalCount} levels confluent — high-conviction structure.</span>`
+    : `<span style="color:var(--amber);">${totalCount - agreeCount} of ${totalCount} diverge — single-expiry sign assumption is the weak link there; size down or wait for confirmation.</span>`;
+
+  html += `<div class="conf-note">${note}<br><span style="opacity:0.7;">Based on ${agg.cachedCount} expirations.</span></div>`;
+
+  el.innerHTML = html;
+}
+
+function log(msg, type='') {
+  const b = document.getElementById('log-panel'); if(!b) return;
+  const p = document.createElement('p'); p.className = type;
+  p.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+  b.insertBefore(p, b.firstChild);
+  while(b.children.length > 50) b.removeChild(b.lastChild);
+}
+
+// ────────────────────────────────────────────
+// DATE SYSTEM
+// ────────────────────────────────────────────
+function initDates() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const toYMD = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const fmtShort = d => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate();
+  const dayFull  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Find next Friday (including today if today IS Friday)
+  function nextFriday(from) {
+    const d = new Date(from);
+    const day = d.getDay();
+    if (day !== 5) d.setDate(d.getDate() + ((5 - day + 7) % 7));
+    return d;
+  }
+  // 3rd Friday of the month is always between the 15th and 21st (monthly OPEX)
+  const isMonthlyOpex = (d) => d.getDate() >= 15 && d.getDate() <= 21;
+  // Quarterly OPEX: March, June, September, December monthly OPEX
+  const isQuarterlyOpex = (d) => isMonthlyOpex(d) && [2,5,8,11].includes(d.getMonth());
+
+  // Build 5 consecutive Fridays going forward
+  const fridays = [];
+  let cur = nextFriday(today);
+  for (let i = 0; i < 5; i++) {
+    fridays.push(new Date(cur));
+    cur.setDate(cur.getDate() + 7);
+  }
+
+  // Header: range of the 5 Fridays
+  setEl('h-week-label', fmtShort(fridays[0]).toUpperCase() + ' → ' + fmtShort(fridays[4]).toUpperCase() + ', ' + fridays[4].getFullYear());
+
+  // Subheader date: today
+  setEl('sh-date', dayFull[today.getDay()] + ' ' + fmtShort(today));
+
+  // Expiry dropdown
+  const sel = document.getElementById('expiry-sel');
+  sel.innerHTML = '';
+  activeExpiries = [];
+  const dropdownLabels = ['This Fri','Next Fri','+2wk Fri','+3wk Fri','+4wk Fri'];
+  fridays.forEach((d, i) => {
+    const ymd = toYMD(d);
+    activeExpiries.push(ymd);
+    const opt = document.createElement('option');
+    opt.value = ymd;
+    const opexTag = isQuarterlyOpex(d) ? ' (QOPEX)' : isMonthlyOpex(d) ? ' (OPEX)' : '';
+    opt.textContent = dropdownLabels[i] + ' ' + fmtShort(d) + opexTag;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  currentExpiry = toYMD(fridays[0]);
+
+  // Build Friday cards (Weekly Breakdown)
+  const row = document.getElementById('days-row');
+  row.innerHTML = '';
+  const cardLabels = ['THIS FRI','NEXT FRI','+2 WK','+3 WK','+4 WK'];
+  fridays.forEach((d, i) => {
+    const ymd = toYMD(d);
+    const opex  = isMonthlyOpex(d);
+    const qopex = isQuarterlyOpex(d);
+    const card = document.createElement('div');
+    card.className = 'day-card' + (opex ? ' is-opex' : '') + (i === 0 ? ' active' : '');
+    card.id = 'day-' + i;
+    card.onclick = () => switchDay(ymd, cardLabels[i], 'day-' + i);
+    const opexBadge = qopex ? '<div class="opex-pin" style="background:#ff5252;">QOPEX</div>'
+                    : opex  ? '<div class="opex-pin">OPEX</div>'
+                    : '';
+    card.innerHTML = opexBadge +
+      `<div class="dc-name">${cardLabels[i]}</div>` +
+      `<div class="dc-date">${fmtShort(d)}</div>` +
+      `<div class="dc-flip" id="dcflip-${i}">flip: —</div>` +
+      `<div class="dc-badge unk" id="dcbadge-${i}">—</div>`;
+    row.appendChild(card);
+    if (i === 0) currentDayId = 'day-0';
+  });
+}
+
+// ──────────────────────────────────────────────────────────────
+// TICKER-AWARE EXPIRATION GENERATION (zero API calls, fully local)
+// Classification is based on each ticker's known options-listing class.
+// ──────────────────────────────────────────────────────────────
+
+// 0DTE always included on Unusual Whales (UW supports same-day data on all tiers)
+const INCLUDE_0DTE = true;
+
+const TICKER_PATTERN = {
+  // Daily expirations (M/T/W/Th/F) — broad-market ETFs & indexes
+  'SPY':'daily','QQQ':'daily','IWM':'daily','DIA':'daily',
+  'SPX':'daily','XSP':'daily','NDX':'daily','RUT':'daily',
+  // Mon/Wed/Fri weeklies — mega-cap stocks
+  'AAPL':'mwf','MSFT':'mwf','NVDA':'mwf','AMZN':'mwf','GOOGL':'mwf','GOOG':'mwf',
+  'META':'mwf','TSLA':'mwf','NFLX':'mwf','AVGO':'mwf',
+  // Default for everything else: Friday-only weeklies (AMD, BABA, MU, etc.)
+};
+
+// US market holidays for 2026 (full-day closures)
+const US_HOLIDAYS_2026 = new Set([
+  '2026-01-01', // New Year's Day
+  '2026-01-19', // MLK Day
+  '2026-02-16', // Presidents Day
+  '2026-04-03', // Good Friday
+  '2026-05-25', // Memorial Day
+  '2026-06-19', // Juneteenth
+  '2026-07-03', // Independence Day (observed)
+  '2026-09-07', // Labor Day
+  '2026-11-26', // Thanksgiving
+  '2026-12-25', // Christmas
+]);
+
+// Friday holidays that cause options to roll back to the prior Thursday
+const HOLIDAY_ROLLBACK = {
+  '2026-04-03': '2026-04-02', // Good Friday → Thursday
+  '2026-06-19': '2026-06-18', // Juneteenth → Thursday
+};
+
+// Generate the next 5 expiration dates for a ticker, no API calls needed
+// Skips today (0DTE requires Growth tier on FlashAlpha)
+function generateExpirations(ticker) {
+  const cls = TICKER_PATTERN[ticker.toUpperCase()] || 'fri';
+  let allowedDays;
+  if (cls === 'daily')    allowedDays = [1,2,3,4,5]; // Mon-Fri
+  else if (cls === 'mwf') allowedDays = [1,3,5];     // Mon, Wed, Fri
+  else                    allowedDays = [5];          // Friday only
+
+  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayStr = fmt(today);
+
+  const dates = [];
+  const seen = new Set();
+
+  // Start from today (i=0) if Growth tier, or tomorrow (i=1) if Basic to avoid 0DTE errors
+  const startOffset = INCLUDE_0DTE ? 0 : 1;
+  for (let i = startOffset; i < 90 && dates.length < 5; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dow = d.getDay();
+    if (!allowedDays.includes(dow)) continue;
+
+    const ymd = fmt(d);
+    // Friday holiday rollback — Good Friday, Juneteenth → expiration moves to Thursday
+    if (HOLIDAY_ROLLBACK[ymd]) {
+      const rolled = HOLIDAY_ROLLBACK[ymd];
+      if (rolled > todayStr && !seen.has(rolled)) {
+        dates.push(rolled);
+        seen.add(rolled);
+      }
+      continue;
+    }
+    // Skip regular holidays (no expiration that day)
+    if (US_HOLIDAYS_2026.has(ymd)) continue;
+
+    if (!seen.has(ymd)) {
+      dates.push(ymd);
+      seen.add(ymd);
+    }
+  }
+
+  return dates.sort();
+}
+
+// Rebuild the expiry dropdown + Weekly Breakdown cards with ticker-specific dates
+function rebuildExpiryUI(dateStrings) {
+  if (!dateStrings || !dateStrings.length) return;
+
+  const toYMD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const fmtShort = d => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate();
+  const dayShort = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const dayLong  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const isMonthlyOpex   = (d) => d.getDay() === 5 && d.getDate() >= 15 && d.getDate() <= 21;
+  const isQuarterlyOpex = (d) => isMonthlyOpex(d) && [2,5,8,11].includes(d.getMonth());
+
+  const dates = dateStrings.slice(0,5).map(s => {
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m-1, d, 12, 0, 0);
+  });
+
+  activeExpiries = dates.map(toYMD);
+  currentExpiry  = activeExpiries[0];
+  currentDayId   = 'day-0';
+
+  setEl('h-week-label',
+    fmtShort(dates[0]).toUpperCase()+' → '+fmtShort(dates[dates.length-1]).toUpperCase()+
+    ', '+dates[dates.length-1].getFullYear());
+
+  const sel = document.getElementById('expiry-sel');
+  sel.innerHTML = '';
+  dates.forEach((d, i) => {
+    const opt = document.createElement('option');
+    opt.value = toYMD(d);
+    const opexTag = isQuarterlyOpex(d) ? ' (QOPEX)' : isMonthlyOpex(d) ? ' (OPEX)' : '';
+    opt.textContent = dayLong[d.getDay()]+' '+fmtShort(d)+opexTag;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  const row = document.getElementById('days-row');
+  row.innerHTML = '';
+  dates.forEach((d, i) => {
+    const ymd  = toYMD(d);
+    const opex  = isMonthlyOpex(d);
+    const qopex = isQuarterlyOpex(d);
+    const dayName = dayShort[d.getDay()];
+    const card = document.createElement('div');
+    card.className = 'day-card' + (opex ? ' is-opex' : '') + (i === 0 ? ' active' : '');
+    card.id = 'day-'+i;
+    card.onclick = () => switchDay(ymd, dayName+' '+fmtShort(d), 'day-'+i);
+    const opexBadge = qopex ? '<div class="opex-pin" style="background:#ff5252;">QOPEX</div>'
+                    : opex  ? '<div class="opex-pin">OPEX</div>'
+                    : '';
+    card.innerHTML = opexBadge +
+      `<div class="dc-name">${dayName}</div>` +
+      `<div class="dc-date">${fmtShort(d)}</div>` +
+      `<div class="dc-flip" id="dcflip-${i}">flip: —</div>` +
+      `<div class="dc-badge unk" id="dcbadge-${i}">—</div>`;
+    row.appendChild(card);
+  });
+}
+
+// ────────────────────────────────────────────
+// GEX CHART & HEATSEEKER
+// ────────────────────────────────────────────
+function renderGexChart(strikes) {
+  if (!strikes?.length) return;
+  const labels = strikes.map(s => '$'+s.strike);
+  const vals   = strikes.map(s => +(s.net_gex/1e6).toFixed(2));
+  const colors = vals.map(v => v>=0 ? 'rgba(0,255,136,0.7)' : 'rgba(255,51,51,0.7)');
+  if (gexChart) {
+    gexChart.data.labels = labels;
+    gexChart.data.datasets[0].data = vals;
+    gexChart.data.datasets[0].backgroundColor = colors;
+    gexChart.update('active'); return;
+  }
+  gexChart = new Chart(document.getElementById('gex-chart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'GEX ($M)', data:vals, backgroundColor:colors, borderRadius:2 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>(c.parsed.y>=0?'CALL GEX: +':'PUT GEX: ')+c.parsed.y.toFixed(2)+'M' } } },
+      scales:{
+        x:{ ticks:{color:'#666',font:{size:11},maxRotation:45,autoSkip:true,maxTicksLimit:14}, grid:{color:'rgba(255,255,255,0.03)'} },
+        y:{ ticks:{color:'#666',font:{size:11}}, grid:{color:'rgba(255,255,255,0.03)'}, title:{display:true,text:'GEX ($M)',color:'#666',font:{size:11}} }
+      }
+    }
+  });
+}
+
+function getHeatColor(val, maxAbs) {
+  if (!val) return 'transparent';
+  const ratio = Math.min(Math.abs(val) / maxAbs, 1);
+  if (val > 0) {
+    const r = Math.floor(20 + ratio * 235);
+    const g = Math.floor(160 + ratio * 95);
+    const b = Math.floor(140 - ratio * 140);
+    return `rgba(${r},${g},${b},0.85)`;
+  } else {
+    const r = Math.floor(30 + ratio * 108);
+    const g = Math.floor(150 - ratio * 150);
+    const b = Math.floor(130 + ratio * 96);
+    return `rgba(${r},${g},${b},0.85)`;
+  }
+}
+
+function renderHeatseeker() {
+  const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
+  const dates = activeExpiries;
+  let strikeSet = new Set();
+  let maxAbsVal = 1;
+  dates.forEach(d => {
+    const data = dayCache[ticker+d];
+    if (data && data.strikes) {
+      data.strikes.forEach(s => {
+        strikeSet.add(s.strike);
+        const absGex = Math.abs(s.net_gex);
+        if (absGex > maxAbsVal) maxAbsVal = absGex;
+      });
+    }
+  });
+
+  const sortedStrikes = Array.from(strikeSet).sort((a,b) => b - a);
+  if (sortedStrikes.length === 0) return;
+
+  let headHtml = '<th>Strike</th>';
+  const monthAbbr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dayAbbr = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  dates.forEach(d => {
+    const dt = new Date(d + 'T12:00:00');
+    const dayName = dayAbbr[dt.getDay()];
+    const label = dayName + ' ' + monthAbbr[dt.getMonth()] + ' ' + dt.getDate();
+    // Mark column header dimmed if UW returned no data for this expiry
+    const colData = dayCache[ticker + d];
+    const isEmpty = colData && colData.empty;
+    const style = isEmpty ? ' style="opacity:0.4;font-style:italic"' : '';
+    const suffix = isEmpty ? ' (no data)' : '';
+    headHtml += `<th${style}>${label}${suffix}</th>`;
+  });
+  document.getElementById('hs-head').innerHTML = headHtml;
+
+  let bodyHtml = '';
+  sortedStrikes.forEach(strike => {
+    bodyHtml += `<tr><td class="strike-col">${strike.toFixed(1)}</td>`;
+    dates.forEach(d => {
+      const data = dayCache[ticker+d];
+      let val = null;
+      if (data && data.strikes) {
+        const sObj = data.strikes.find(x => x.strike === strike);
+        if (sObj) val = sObj.net_gex;
+      }
+      if (val !== null) {
+        const bg = getHeatColor(val, maxAbsVal);
+        bodyHtml += `<td style="background:${bg}; color:${Math.abs(val)/maxAbsVal > 0.6 ? '#fff' : 'var(--text)'}">${fnumK(val)}</td>`;
+      } else {
+        bodyHtml += `<td>$0.0K</td>`;
+      }
+    });
+    bodyHtml += `</tr>`;
+  });
+  document.getElementById('hs-body').innerHTML = bodyHtml;
+
+  // ── Auto-scroll matrix to center on current spot ──
+  // Find the strike row closest to spot and scroll the matrix so it sits in the middle
+  // of the visible area. Means user always sees the most actionable strikes immediately.
+  const activeData = dayCache[ticker + (activeExpiries[0] || '')];
+  const spot = activeData?.underlying_price;
+  if (spot && sortedStrikes.length > 0) {
+    let closestIdx = 0;
+    let smallestDiff = Infinity;
+    sortedStrikes.forEach((s, i) => {
+      const diff = Math.abs(s - spot);
+      if (diff < smallestDiff) { smallestDiff = diff; closestIdx = i; }
+    });
+    const wrap = document.querySelector('.hs-wrap');
+    const tbody = document.getElementById('hs-body');
+    if (wrap && tbody && tbody.rows[closestIdx]) {
+      const targetRow = tbody.rows[closestIdx];
+      const rowOffsetTop = targetRow.offsetTop;
+      const wrapHeight = wrap.clientHeight;
+      const rowHeight = targetRow.clientHeight;
+      // Center the spot row in the visible area
+      wrap.scrollTop = Math.max(0, rowOffsetTop - (wrapHeight / 2) + (rowHeight / 2));
+    }
+  }
+}
+
+// ────────────────────────────────────────────
+// API FETCHERS  —  Unusual Whales endpoints
+// ────────────────────────────────────────────
+// UW endpoint reference:
+//   GEX by strike:  GET /api/stock/{ticker}/spot-exposures/strike?expiry=YYYY-MM-DD
+//   Flow alerts:    GET /api/option-trades/flow-alerts?ticker_symbol={ticker}&...
+//   Auth header:    Authorization: Bearer <token>
+const UW_BASE = 'https://api.unusualwhales.com';
+
+// Transform UW's per-strike response into the FlashAlpha-shaped object
+// the rest of the dashboard already knows how to render.
+function transformUWtoFA(uw, ticker, realSpotPrice, targetExpiry) {
+  let rawRows = (uw && uw.data) || [];
+  const totalRows = rawRows.length;
+
+  // ── STEP 1: Filter rows to the requested expiration ──
+  // UW's /spot-exposures/expiry-strike endpoint returns rows tagged with their
+  // expiry; the ?expiry= query param doesn't always filter server-side, so we
+  // do it client-side to make sure we're looking at one expiry only.
+  if (targetExpiry && rawRows.length > 0) {
+    const expiryFieldCandidates = ['expiry', 'expiration', 'expiry_date', 'date'];
+    // Detect which field the response uses (first row that has any matching key)
+    let expiryField = null;
+    for (const k of expiryFieldCandidates) {
+      if (rawRows[0][k] !== undefined) { expiryField = k; break; }
+    }
+    if (expiryField) {
+      const normalize = s => String(s).slice(0, 10); // YYYY-MM-DD prefix only
+      const target = normalize(targetExpiry);
+      const filtered = rawRows.filter(r => normalize(r[expiryField]) === target);
+      if (filtered.length > 0) {
+        rawRows = filtered;
+      } else {
+        // No rows matched the requested expiry — log so user can see what's there
+        const uniqueExpiries = [...new Set(rawRows.map(r => normalize(r[expiryField])))].sort();
+        log(`No ${ticker} rows for ${target}. Response has: ${uniqueExpiries.slice(0,4).join(', ')}${uniqueExpiries.length>4?'...':''}`, 'err');
+      }
+    }
+    log(`${ticker} ${targetExpiry}: ${rawRows.length} of ${totalRows} rows after filter`, 'info');
+  }
+
+  // ── STEP 2: Build per-strike net_gex ──
+  // UW convention (from their docs): put gamma is signed NEGATIVE.
+  // So net_gex per strike = call_gamma_oi + put_gamma_oi (just sum the signed values).
+  // Field names vary between endpoints: spot-exposures uses call_gamma_oi/put_gamma_oi,
+  // greek-exposure may use call_gamma/put_gamma. Try common variants defensively.
+  const allStrikes = rawRows.map(r => {
+    const strike = parseFloat(r.strike);
+    const cg = parseFloat(r.call_gamma_oi ?? r.call_gamma ?? r.call_gex ?? r.gamma_call ?? 0);
+    const pg = parseFloat(r.put_gamma_oi  ?? r.put_gamma  ?? r.put_gex  ?? r.gamma_put  ?? 0);
+    return { strike, net_gex: cg + pg };
+  }).filter(s => Number.isFinite(s.strike));
+
+  allStrikes.sort((a,b) => a.strike - b.strike);
+
+  // ── STEP 3: Take the 50 strikes nearest to current spot ──
+  // Trading-relevant view: 50 nearest strikes centered around current price.
+  // If UW returned fewer strikes for this expiry (common for short-dated), we
+  // show everything available. This gives the user max actionable data without
+  // showing irrelevant LEAPS-territory strikes like $25 or $930 for AMD.
+  const TARGET_STRIKE_COUNT = 50;
+  let strikes = allStrikes;
+  if (realSpotPrice && allStrikes.length > TARGET_STRIKE_COUNT) {
+    strikes = [...allStrikes]
+      .sort((a, b) => Math.abs(a.strike - realSpotPrice) - Math.abs(b.strike - realSpotPrice))
+      .slice(0, TARGET_STRIKE_COUNT)
+      .sort((a, b) => a.strike - b.strike); // re-sort by strike for display
+  }
+
+  // Aggregate metrics from the displayed strike set
+  const total_gex = strikes.reduce((sum, s) => sum + s.net_gex, 0);
+
+  // Underlying price: use the real spot fetched separately if provided; otherwise look in the
+  // envelope; otherwise fall back to the highest-GEX strike (last resort, may be wrong).
+  const underlying_price = realSpotPrice ||
+    parseFloat(uw && (uw.spot_price || uw.underlying_price || uw.price)) ||
+    null;
+
+  // Gamma flip: walk strikes low→high and find where cumulative GEX crosses zero
+  let gamma_flip = null;
+  if (strikes.length > 0 && underlying_price) {
+    let cum = 0, bestDiff = Infinity, flipStrike = null;
+    let prevCum = 0;
+    for (const s of strikes) {
+      prevCum = cum;
+      cum += s.net_gex;
+      if ((prevCum < 0 && cum >= 0) || (prevCum > 0 && cum <= 0)) {
+        flipStrike = s.strike;
+        break;
+      }
+      const diff = Math.abs(cum);
+      if (diff < bestDiff) { bestDiff = diff; flipStrike = s.strike; }
+    }
+    gamma_flip = flipStrike;
+  } else if (strikes.length > 0) {
+    let maxAbs = -Infinity, fallback = null;
+    strikes.forEach(s => {
+      if (Math.abs(s.net_gex) > maxAbs) { maxAbs = Math.abs(s.net_gex); fallback = s.strike; }
+    });
+    gamma_flip = fallback;
+  }
+
+  // Quick diagnostic so user can see what was filtered
+  const posCount = strikes.filter(s => s.net_gex > 0).length;
+  const negCount = strikes.filter(s => s.net_gex < 0).length;
+  if (strikes.length > 0) {
+    const lo = strikes[0].strike, hi = strikes[strikes.length - 1].strike;
+    const trimmed = allStrikes.length - strikes.length;
+    const capInfo = trimmed > 0
+      ? `top ${strikes.length} closest to spot of ${allStrikes.length} returned`
+      : `all ${strikes.length} strikes UW returned for this expiry`;
+    log(`${ticker} ${targetExpiry}: $${lo}-$${hi} (${posCount}+/${negCount}-, ${capInfo})`, 'info');
+  }
+
+  return {
+    underlying_price,
+    gamma_flip,
+    net_gex: total_gex,
+    net_gex_label: total_gex >= 0 ? 'positive' : 'negative',
+    call_wall: null,
+    put_wall:  null,
+    strikes
+  };
+}
+
+// Fetch flow alerts for ticker, then return aggregated call vs put premium (for Pro Insight line)
+async function fetchFlowSummary(ticker, key) {
+  try {
+    const url = `${UW_BASE}/api/option-trades/flow-alerts?ticker_symbol=${ticker}&min_premium=25000&limit=200`;
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + key } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const rows = (j && j.data) || [];
+    let callPrem = 0, putPrem = 0, callCount = 0, putCount = 0;
+    rows.forEach(t => {
+      const prem = parseFloat(t.total_premium || t.premium || 0);
+      const typ = (t.type || t.option_type || '').toUpperCase();
+      if (typ.startsWith('C')) { callPrem += prem; callCount++; }
+      else if (typ.startsWith('P')) { putPrem += prem; putCount++; }
+    });
+    // Log first trade fields once so we can diagnose if needed
+    if (rows.length > 0) diagDumpRowOnce(ticker + ':flow-alerts-row', rows[0]);
+    return { callPrem, putPrem, callCount, putCount, total: rows.length, trades: rows };
+  } catch(e) {
+    return null;
+  }
+}
+
+// ────────────────────────────────────────────
+// REAL UNDERLYING PRICE  —  UW: /api/stock/{ticker}/stock-state
+// Cached per ticker per session so we only spend 1 credit per new ticker.
+// The session-cache resets on Start (new ticker = new price lookup).
+// ────────────────────────────────────────────
+const spotPriceCache = {};
+
+async function fetchUnderlyingPrice(ticker, key) {
+  if (spotPriceCache[ticker] != null) return spotPriceCache[ticker];
+  try {
+    const url = `${UW_BASE}/api/stock/${ticker}/stock-state`;
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + key } });
+    if (!r.ok) {
+      log('Spot price fetch failed: ' + r.status + ' — derived spot will be approximate','err');
+      return null;
+    }
+    const j = await r.json();
+    // UW response shape: { data: { close, high, low, open, prev_close_price, ... } } — close is the latest tick
+    const d = (j && (j.data || j)) || {};
+    const price = parseFloat(
+      d.close || d.current_price || d.last_price || d.price ||
+      d.bid || d.ask || d.prev_close_price || 0
+    );
+    if (price && Number.isFinite(price)) {
+      spotPriceCache[ticker] = price;
+      log('✓ Real spot price for ' + ticker + ': $' + price.toFixed(2),'ok');
+      return price;
+    }
+    return null;
+  } catch(e) {
+    log('Spot price error: ' + e.message,'err');
+    return null;
+  }
+}
+
+// ────────────────────────────────────────────
+// NET FLOW INTRADAY CHART (UW: /stock/{ticker}/net-prem-ticks)
+// Live intraday cumulative net call/put premium for the selected ticker.
+// Endpoint returns { data: [{ timestamp, net_call_premium, net_put_premium, ... }, ...] }
+// ────────────────────────────────────────────
+let netFlowChart = null;
+
+// Manual refresh for the Net Flow chart only — 1 credit, doesn't trigger
+// any other dashboard updates. Useful when you want fresher flow data
+// without burning credits on a full polling cycle.
+async function refreshNetFlow() {
+  const key = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
+  if (!key) { log('Enter API key first.','err'); return; }
+  if (!ticker) { log('Enter a ticker first.','err'); return; }
+  const btn = document.getElementById('btn-nf-refresh');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ refreshing...'; }
+  // Fetch all three endpoints in parallel:
+  //   1. net-prem-ticks → chart cumulative lines
+  //   2. options-volume → breakdown stats strip
+  //   3. flow-alerts    → chart arrows
+  await Promise.all([
+    updateNetFlowChart(ticker, key),
+    updateNetFlowStats(ticker, key),
+    fetchFlowSummary(ticker, key).then(flow => {
+      if (flow && flow.trades && flow.trades.length > 0) {
+        // Wait for chart to be ready (rendered by updateNetFlowChart) then update arrows
+        const tryUpdate = (attempts = 0) => {
+          if (netFlowChart) updateChartArrows(flow.trades);
+          else if (attempts < 10) setTimeout(() => tryUpdate(attempts + 1), 200);
+        };
+        tryUpdate();
+      }
+    })
+  ]);
+  if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
+  log(`Net Flow refreshed for ${ticker} (3 credits)`, 'info');
+}
+
+// Fetch the daily options-volume breakdown (call/put bought/sold premium) and
+// update the stats strip above the cumulative chart. Cost: 1 credit per call.
+async function updateNetFlowStats(ticker, key) {
+  try {
+    const url = `${UW_BASE}/api/stock/${ticker}/options-volume`;
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + key } });
+    if (!r.ok) {
+      log(`Options volume fetch failed (${r.status}) for ${ticker}`, 'info');
+      return;
+    }
+    const resp = await r.json();
+    // UW may return data as object {data: {...}}, array {data: [{...}]}, or at top level.
+    let row = resp && resp.data;
+    if (Array.isArray(row)) row = row[0];
+    if (!row && resp && typeof resp === 'object' && !Array.isArray(resp)) row = resp;
+    if (!row) { log(`Options volume: empty response for ${ticker}`, 'info'); return; }
+
+    // FULL diagnostic — dump every field name + value to the activity log so we can
+    // see exactly what UW returned. Only logs once per ticker per session.
+    diagDumpRowOnce(ticker + ':options-volume', row);
+
+    // Comprehensive field-name detection. UW uses different conventions per endpoint.
+    // Try every plausible variant we've seen across their docs and examples.
+    const num = v => parseFloat(v || 0);
+    const pick = (...names) => {
+      for (const n of names) {
+        if (row[n] !== undefined && row[n] !== null && row[n] !== '') return num(row[n]);
+      }
+      return 0;
+    };
+
+    // CALL BOUGHT — ask-side call premium (aggressive buyers paying the ask)
+    const callBought = pick(
+      'call_premium_ask_side', 'call_ask_premium', 'ask_call_premium',
+      'call_ask_side_premium', 'ask_side_call_premium', 'bullish_call_premium',
+      'call_premium_ask', 'ask_call_prem'
+    );
+    // CALL SOLD — bid-side call premium
+    const callSold = pick(
+      'call_premium_bid_side', 'call_bid_premium', 'bid_call_premium',
+      'call_bid_side_premium', 'bid_side_call_premium', 'bearish_call_premium',
+      'call_premium_bid', 'bid_call_prem'
+    );
+    // PUT BOUGHT — ask-side put premium
+    const putBought = pick(
+      'put_premium_ask_side', 'put_ask_premium', 'ask_put_premium',
+      'put_ask_side_premium', 'ask_side_put_premium', 'bearish_put_premium',
+      'put_premium_ask', 'ask_put_prem'
+    );
+    // PUT SOLD — bid-side put premium
+    const putSold = pick(
+      'put_premium_bid_side', 'put_bid_premium', 'bid_put_premium',
+      'put_bid_side_premium', 'bid_side_put_premium', 'bullish_put_premium',
+      'put_premium_bid', 'bid_put_prem'
+    );
+
+    // TOTAL VOLUME — sum of all calls + puts traded today
+    const callVol = pick('call_volume', 'call_vol', 'total_call_volume');
+    const putVol  = pick('put_volume',  'put_vol',  'total_put_volume');
+    const totalVol = pick('total_volume', 'volume', 'options_volume') || (callVol + putVol);
+
+    // TOTAL PREMIUM — sum of all premium traded today (calls + puts, both sides + mid)
+    const callPrem = pick('call_premium', 'total_call_premium');
+    const putPrem  = pick('put_premium',  'total_put_premium');
+    const totalPrem = pick('total_premium', 'premium') || (callPrem + putPrem)
+                                                      || (callBought + callSold + putBought + putSold);
+
+    // If we got call_premium + put_premium but not the bought/sold breakdown,
+    // fall back to net values from the existing ticks endpoint (already fetched).
+    // We'll fill what we can and show "—" for the rest in the UI.
+    renderNetFlowStats({
+      callBought, callSold, putBought, putSold,
+      totalVol, totalPrem,
+      // pass total call/put premium as fallback metrics in case breakdown is empty
+      fallbackCallPrem: callPrem,
+      fallbackPutPrem:  putPrem,
+      // Direct net values if UW provides them (saves derivation)
+      directNCP: pick('net_call_premium', 'net_premium_calls'),
+      directNPP: pick('net_put_premium',  'net_premium_puts')
+    });
+  } catch(e) {
+    log(`Options volume error: ${e.message}`, 'err');
+  }
+}
+
+// Dump every field name AND value of a response row to the activity log (once per key)
+const diagDumped = {};
+function diagDumpRowOnce(cacheKey, row) {
+  if (diagDumped[cacheKey]) return;
+  diagDumped[cacheKey] = true;
+  log(`=== ${cacheKey} RAW RESPONSE FIELDS ===`, 'info');
+  try {
+    const entries = Object.entries(row);
+    // Log up to 30 fields, with values clipped to 60 chars
+    entries.slice(0, 30).forEach(([k, v]) => {
+      const valStr = (typeof v === 'object') ? JSON.stringify(v).slice(0, 60) : String(v).slice(0, 60);
+      log(`  ${k} = ${valStr}`, 'info');
+    });
+    if (entries.length > 30) log(`  ...and ${entries.length - 30} more fields`, 'info');
+    // Also dump to browser console for easier copy-paste
+    console.log(`UW ${cacheKey} response:`, row);
+  } catch(e) {
+    log(`  (couldn't enumerate fields: ${e.message})`, 'err');
+  }
+  log(`=== END ${cacheKey} ===`, 'info');
+}
+
+// Compute derived metrics from the 4 primitives and update the DOM.
+function renderNetFlowStats(s) {
+  // Determine if UW gave us the direct 4-primitive breakdown.
+  let haveBreakdown = (s.callBought + s.callSold + s.putBought + s.putSold) > 0;
+  let callBought = s.callBought, callSold = s.callSold;
+  let putBought  = s.putBought,  putSold  = s.putSold;
+
+  // If breakdown missing but we have totals + net values, derive algebraically:
+  //   bought + sold = total      (ignoring small mid/neutral trades)
+  //   bought - sold = net
+  //   →  bought = (total + net) / 2
+  //   →  sold   = (total - net) / 2
+  // This gives precise net values and approximate (within mid premium) primitives.
+  if (!haveBreakdown && s.fallbackCallPrem > 0 && s.directNCP !== undefined) {
+    callBought = (s.fallbackCallPrem + s.directNCP) / 2;
+    callSold   = (s.fallbackCallPrem - s.directNCP) / 2;
+    haveBreakdown = true;
+  }
+  if (!haveBreakdown && s.fallbackPutPrem > 0 && s.directNPP !== undefined) {
+    putBought = (s.fallbackPutPrem + s.directNPP) / 2;
+    putSold   = (s.fallbackPutPrem - s.directNPP) / 2;
+    haveBreakdown = true;
+  }
+  // Handle put case independently if call worked but put didn't
+  if (s.fallbackPutPrem > 0 && s.directNPP !== undefined && (putBought + putSold) === 0) {
+    putBought = (s.fallbackPutPrem + s.directNPP) / 2;
+    putSold   = (s.fallbackPutPrem - s.directNPP) / 2;
+  }
+  if (s.fallbackCallPrem > 0 && s.directNCP !== undefined && (callBought + callSold) === 0) {
+    callBought = (s.fallbackCallPrem + s.directNCP) / 2;
+    callSold   = (s.fallbackCallPrem - s.directNCP) / 2;
+  }
+
+  // Derived top-line: prefer direct UW values if present, else compute from primitives.
+  const NCP = (s.directNCP !== undefined && s.directNCP !== 0) ? s.directNCP : (callBought - callSold);
+  const NPP = (s.directNPP !== undefined && s.directNPP !== 0) ? s.directNPP : (putBought  - putSold);
+  const NET = NCP - NPP;
+
+  // Sentiment from the 4 primitives (now always present after derivation)
+  const bullish = callBought + putSold;     // ask-side calls + bid-side puts
+  const bearish = callSold   + putBought;   // bid-side calls + ask-side puts
+  const total = bullish + bearish;
+  let bullPct = total > 0 ? (bullish / total) * 100 : 50;
+  let bearPct = 100 - bullPct;
+
+  // If we STILL don't have breakdown (no fallback values either), use sign-based approximation
+  if (callBought + callSold === 0 && putBought + putSold === 0) {
+    const bullStrength = Math.max(0, NCP) + Math.max(0, -NPP);
+    const bearStrength = Math.max(0, -NCP) + Math.max(0, NPP);
+    const t = bullStrength + bearStrength;
+    bullPct = t > 0 ? (bullStrength / t) * 100 : 50;
+    bearPct = 100 - bullPct;
+  }
+
+  // Format helpers
+  const $M = v => '$' + (Math.abs(v) / 1e6).toFixed(2) + 'M';
+  const $Msigned = v => (v < 0 ? '-' : '') + $M(v);
+  const setVal = (id, txt, klass) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = txt;
+    el.classList.remove('pos','neg');
+    if (klass) el.classList.add(klass);
+  };
+
+  // Top row: Vol, Prem, Net, NCP, NPP
+  setVal('nf-vol',  s.totalVol > 0 ? s.totalVol.toLocaleString() : '—');
+  setVal('nf-prem', s.totalPrem > 0 ? $M(s.totalPrem) : '—');
+  setVal('nf-net',  $Msigned(NET), NET >= 0 ? 'pos' : 'neg');
+  setVal('nf-ncp',  $Msigned(NCP), NCP >= 0 ? 'pos' : 'neg');
+  setVal('nf-npp',  $Msigned(NPP), NPP >= 0 ? 'pos' : 'neg');
+
+  // Breakdown row: 4 primitives (now derived if needed)
+  setVal('nf-call-bought', (callBought > 0) ? $M(callBought) : '—');
+  setVal('nf-call-sold',   (callSold   > 0) ? $M(callSold)   : '—');
+  setVal('nf-put-bought',  (putBought  > 0) ? $M(putBought)  : '—');
+  setVal('nf-put-sold',    (putSold    > 0) ? $M(putSold)    : '—');
+
+  // Sentiment bar widths
+  const bearBar = document.getElementById('nf-sent-bear-bar');
+  const bullBar = document.getElementById('nf-sent-bull-bar');
+  if (bearBar) bearBar.style.width = bearPct.toFixed(1) + '%';
+  if (bullBar) bullBar.style.width = bullPct.toFixed(1) + '%';
+  setEl('nf-sent-bear-lbl', `Bearish ${bearPct.toFixed(0)}%`);
+  setEl('nf-sent-bull-lbl', `Bullish ${bullPct.toFixed(0)}%`);
+}
+
+async function updateNetFlowChart(ticker, key) {
+  const statusEl = document.getElementById('nf-status');
+  setEl('nf-ticker-lbl', ticker);
+  if (statusEl) statusEl.textContent = 'fetching...';
+
+  try {
+    // Only fetch ticks for the cumulative lines. Chart renders immediately.
+    // Arrows are added separately by updateChartArrows() when flow-alerts data arrives.
+    const r = await fetch(`${UW_BASE}/api/stock/${ticker}/net-prem-ticks`, { headers: { 'Authorization': 'Bearer ' + key } });
+    if (!r.ok) {
+      if (statusEl) statusEl.textContent = 'no data';
+      log('Net flow ticks fetch failed: ' + r.status, 'err');
+      return;
+    }
+    const j = await r.json();
+    const ticks = (j && j.data) || [];
+    if (ticks.length === 0) {
+      if (statusEl) statusEl.textContent = 'no ticks yet';
+      return;
+    }
+
+    // Convert UW intraday ticks to chart-friendly arrays.
+    // UW's net-prem-ticks endpoint uses `tape_time` (e.g., "2026-05-18T13:30:00Z").
+    // Fall back to other timestamp field names if format ever changes.
+    const labels = ticks.map(t => {
+      const ts = t.tape_time || t.timestamp || t.executed_at || t.date || '';
+      const m = ts.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : ts.slice(11, 16);
+    });
+
+    // Accumulate per-tick deltas into running totals from market open.
+    let cumCall = 0, cumPut = 0;
+    const callPrem = ticks.map(t => { cumCall += parseFloat(t.net_call_premium || 0) / 1e6; return cumCall; });
+    const putPrem  = ticks.map(t => { cumPut  += parseFloat(t.net_put_premium  || 0) / 1e6; return cumPut;  });
+
+    // Render chart with the 2 cumulative lines only (no arrow markers).
+    renderNetFlowChart(labels, callPrem, putPrem);
+    if (statusEl) statusEl.textContent = `${ticks.length} ticks · updated ${new Date().toLocaleTimeString()}`;
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'error';
+    log('Net flow error: ' + e.message, 'err');
+  }
+}
+
+// Triangles removed by user preference — function kept as no-op so existing
+// callers (fetchAll, refreshNetFlow) don't need to be touched.
+function updateChartArrows(rawTrades) {
+  return;
+}
+
+// Parse flow-alerts trades into normalized arrow markers. UW's response shape:
+//   - option_chain  (e.g., "SPY270319C00800000" — C/P embedded in OCC symbol)
+//   - total_ask_side_prem / total_bid_side_prem  (premium attribution by side)
+//   - created_at  (ISO timestamp) or start_time/end_time (Unix ms)
+//   - alert_rule  ("RepeatedHits", "BullishSweep", etc. — sometimes hints at side)
+function parseTradeArrows(rawTrades) {
+  const MIN_PREMIUM = 100_000;
+  const out = [];
+
+  let droppedNoPremium = 0;
+  let droppedBelowThreshold = 0;
+  let droppedBadType = 0;
+  let droppedNoSide = 0;
+  let droppedNoTime = 0;
+  let maxPremiumSeen = 0;
+  let minPremiumSeen = Infinity;
+
+  rawTrades.forEach(t => {
+    // ── Premium ──
+    const prem = parseFloat(t.total_premium || t.premium || 0);
+    if (!prem) { droppedNoPremium++; return; }
+    if (prem > maxPremiumSeen) maxPremiumSeen = prem;
+    if (prem < minPremiumSeen) minPremiumSeen = prem;
+    if (prem < MIN_PREMIUM) { droppedBelowThreshold++; return; }
+
+    // ── Type: try direct field first, then parse OCC symbol ──
+    let type = (t.option_type || t.type || '').toLowerCase();
+    if (type !== 'call' && type !== 'put') {
+      const chain = t.option_chain || t.option_symbol || t.option_chain_id || '';
+      // OCC format: TICKER YYMMDD C/P STRIKE(8 digits) — find C or P before final 8 digits
+      const m = chain.match(/([CP])(\d{8})$/);
+      if (m) type = m[1] === 'C' ? 'call' : 'put';
+    }
+    if (type !== 'call' && type !== 'put') { droppedBadType++; return; }
+
+    // ── Side: 4-tier fallback chain ──
+    let side = null;
+
+    // Tier 1: tags array (some endpoints)
+    const tags = t.tags || [];
+    if (Array.isArray(tags)) {
+      if (tags.includes('ask_side') || tags.includes('ask') || tags.includes('bullish')) side = 'buy';
+      else if (tags.includes('bid_side') || tags.includes('bid') || tags.includes('bearish')) side = 'sell';
+    }
+
+    // Tier 2: total_ask_side_prem vs total_bid_side_prem (flow-alerts standard)
+    if (!side) {
+      const askPrem = parseFloat(t.total_ask_side_prem || t.ask_side_prem || t.ask_premium || 0);
+      const bidPrem = parseFloat(t.total_bid_side_prem || t.bid_side_prem || t.bid_premium || 0);
+      if (askPrem > 0 || bidPrem > 0) {
+        if (askPrem > bidPrem * 1.2) side = 'buy';
+        else if (bidPrem > askPrem * 1.2) side = 'sell';
+      }
+    }
+
+    // Tier 3: price vs NBBO bid/ask
+    if (!side) {
+      const price = parseFloat(t.price || t.executed_price || 0);
+      const bid = parseFloat(t.nbbo_bid || t.bid || 0);
+      const ask = parseFloat(t.nbbo_ask || t.ask || 0);
+      if (price && bid && ask && ask > bid) {
+        const mid = (bid + ask) / 2;
+        if (price >= mid + (ask - mid) * 0.4) side = 'buy';
+        else if (price <= mid - (mid - bid) * 0.4) side = 'sell';
+      } else if (price && bid && !ask) {
+        // Only bid available — if trade was below bid, it's a sell; at/above bid is ambiguous but tilt buy
+        if (price < bid * 0.97) side = 'sell';
+        else if (price > bid * 1.03) side = 'buy';
+      }
+    }
+
+    // Tier 4: alert_rule keywords (last resort)
+    if (!side) {
+      const rule = (t.alert_rule || '').toLowerCase();
+      if (rule.includes('bullish') || rule.includes('sweep_buy') || rule.includes('opening_call')) side = 'buy';
+      else if (rule.includes('bearish') || rule.includes('sweep_sell') || rule.includes('opening_put')) side = 'sell';
+    }
+
+    if (!side) { droppedNoSide++; return; }
+
+    // ── Time: try ISO timestamps first, then convert Unix ms ──
+    let time = t.executed_at || t.tape_time || t.timestamp || t.created_at || '';
+    if (!time && (t.start_time || t.end_time)) {
+      const ms = parseInt(t.start_time || t.end_time);
+      if (ms && !isNaN(ms)) time = new Date(ms).toISOString();
+    }
+    if (!time) { droppedNoTime++; return; }
+
+    out.push({
+      time, type, side, premium: prem,
+      strike: t.strike,
+      expiry: t.expiry || t.expiration || ''
+    });
+  });
+
+  // Detailed funnel logging — show every drop reason
+  if (rawTrades.length > 0) {
+    const maxM = (maxPremiumSeen / 1e6).toFixed(2);
+    const minM = (minPremiumSeen / 1e6).toFixed(2);
+    log(`Arrow funnel: ${rawTrades.length} raw → ${out.length} kept · prem range $${minM}M–$${maxM}M`, 'info');
+    if (droppedBelowThreshold > 0) log(`  · ${droppedBelowThreshold} below $100K threshold`, 'info');
+    if (droppedBadType > 0)        log(`  · ${droppedBadType} no call/put type detected`, 'info');
+    if (droppedNoSide > 0)         log(`  · ${droppedNoSide} no bid/ask side info (all 4 fallbacks failed)`, 'info');
+    if (droppedNoTime > 0)         log(`  · ${droppedNoTime} no timestamp`, 'info');
+    if (droppedNoPremium > 0)      log(`  · ${droppedNoPremium} no premium`, 'info');
+  } else {
+    log(`Arrow funnel: flow-alerts returned 0 trades (empty)`, 'info');
+  }
+
+  parseTradeArrows.lastFunnel = {
+    raw: rawTrades.length,
+    kept: out.length,
+    maxPremium: maxPremiumSeen,
+    droppedBelow: droppedBelowThreshold,
+    droppedBadType: droppedBadType,
+    droppedNoSide: droppedNoSide
+  };
+
+  return out;
+}
+
+// Map each trade to the nearest tick by time, then group into 4 marker bucket arrays.
+// Returns { callBuys, callSells, putBuys, putSells } each containing { idx, y, premium, trades }
+function buildTradeMarkers(trades, labels, callPremM, putPremM) {
+  const empty = { callBuys: [], callSells: [], putBuys: [], putSells: [] };
+  if (!labels.length || !trades.length) return empty;
+
+  // Pre-parse labels to minute-of-day for fast lookup
+  const labelMins = labels.map(l => {
+    const m = l.match(/(\d{2}):(\d{2})/);
+    return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+  });
+
+  // Aggregation key: bucket trades happening in the same tick + same type + same side
+  const buckets = {};  // key = `${idx}|${type}|${side}` → { premium, count, trades, idx, y, type, side }
+
+  trades.forEach(tr => {
+    const tm = tr.time.match(/T(\d{2}):(\d{2})/);
+    if (!tm) return;
+    const tradeMin = parseInt(tm[1], 10) * 60 + parseInt(tm[2], 10);
+
+    // Snap to nearest tick index
+    let bestIdx = -1, bestDiff = Infinity;
+    for (let i = 0; i < labelMins.length; i++) {
+      if (labelMins[i] === null) continue;
+      const d = Math.abs(tradeMin - labelMins[i]);
+      if (d < bestDiff) { bestDiff = d; bestIdx = i; }
+    }
+    if (bestIdx < 0) return;
+
+    const y = tr.type === 'call' ? callPremM[bestIdx] : putPremM[bestIdx];
+    const key = `${bestIdx}|${tr.type}|${tr.side}`;
+    if (!buckets[key]) {
+      buckets[key] = { idx: bestIdx, y, type: tr.type, side: tr.side, premium: 0, count: 0, trades: [] };
+    }
+    buckets[key].premium += tr.premium;
+    buckets[key].count   += 1;
+    buckets[key].trades.push(tr);
+  });
+
+  const out = { callBuys: [], callSells: [], putBuys: [], putSells: [] };
+  Object.values(buckets).forEach(b => {
+    if (b.type === 'call' && b.side === 'buy')  out.callBuys.push(b);
+    else if (b.type === 'call' && b.side === 'sell') out.callSells.push(b);
+    else if (b.type === 'put'  && b.side === 'buy')  out.putBuys.push(b);
+    else if (b.type === 'put'  && b.side === 'sell') out.putSells.push(b);
+  });
+  return out;
+}
+
+// Build per-label data arrays for a marker dataset (null where no trade, value where there is one)
+function bucketToDataArr(buckets, labelLen) {
+  const data = new Array(labelLen).fill(null);
+  const meta = new Array(labelLen).fill(null);
+  buckets.forEach(b => { data[b.idx] = b.y; meta[b.idx] = b; });
+  return { data, meta };
+}
+
+// Premium → arrow radius (visual size). Capped 5px to 22px.
+function premiumToRadius(prem) {
+  // log10 scaling: $100K → ~5, $1M → ~9, $10M → ~13, $100M → ~17
+  return Math.min(22, Math.max(5, Math.log10(Math.max(prem, 100000) / 100000) * 4 + 5));
+}
+
+function renderNetFlowChart(labels, callPremM, putPremM, markers) {
+  const ctx = document.getElementById('net-flow-chart');
+  if (!ctx) return;
+
+  // If chart already exists, just update its data
+  if (netFlowChart) {
+    netFlowChart.data.labels = labels;
+    netFlowChart.data.datasets[0].data = callPremM;
+    netFlowChart.data.datasets[1].data = putPremM;
+    netFlowChart.update('active');
+    return;
+  }
+
+  netFlowChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Cumulative Call Premium ($M)', data: callPremM, borderColor: '#00ff88', backgroundColor: 'rgba(0,255,136,0.10)', tension: 0.35, pointRadius: 0, borderWidth: 2, fill: true },
+        { label: 'Cumulative Put Premium ($M)',  data: putPremM,  borderColor: '#ff3333', backgroundColor: 'rgba(255,51,51,0.10)', tension: 0.35, pointRadius: 0, borderWidth: 2, fill: true }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#ccc', font: { size: 11, family: 'monospace' }, usePointStyle: true } },
+        tooltip: {
+          callbacks: {
+            title: (items) => items.length ? (labels[items[0].dataIndex] || '') : '',
+            label: (c) => c.dataset.label + ': $' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : '0.00') + 'M'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#666', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+        y: { ticks: { color: '#666', font: { size: 10 }, callback: v => '$' + v.toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.03)' }, title: { display: true, text: 'Cumulative Premium ($M, from open)', color: '#666', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// Try one GEX endpoint, return transformed FlashAlpha-shaped data (or null on failure/empty)
+async function tryGexEndpoint(url, key, ticker, expiry, realPrice, label) {
+  try {
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + key } });
+    if (!r.ok) {
+      if (r.status !== 404 && r.status !== 410) {
+        log(`${label} failed (${r.status}) for ${ticker} ${expiry}`, 'info');
+      }
+      return null;
+    }
+    const uwData = await r.json();
+    logResponseShapeOnce(ticker + ':' + label, uwData);
+    const data = transformUWtoFA(uwData, ticker, realPrice, expiry);
+    if (!data || !data.strikes || data.strikes.length === 0) {
+      return null; // endpoint returned no strikes
+    }
+    return { data, label };
+  } catch (e) {
+    log(`${label} error for ${ticker} ${expiry}: ${e.message}`, 'err');
+    return null;
+  }
+}
+
+async function fetchExpiry(ticker, expiry, dayIdx) {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) return null;
+  try {
+    // Get real underlying price (cached per ticker)
+    const realPrice = await fetchUnderlyingPrice(ticker, key);
+
+    // Try endpoints in order of preference until one returns non-empty data.
+    // Each endpoint covers per-expiry GEX by strike but with slightly different
+    // computation methods and coverage windows.
+    const endpoints = [
+      {
+        url: `${UW_BASE}/api/stock/${ticker}/spot-exposures/${expiry}/strike`,
+        label: 'spot-exposures/{expiry}/strike'
+      },
+      {
+        url: `${UW_BASE}/api/stock/${ticker}/greek-exposure/strike-expiry?expiry=${expiry}`,
+        label: 'greek-exposure/strike-expiry'
+      },
+      {
+        url: `${UW_BASE}/api/stock/${ticker}/spot-exposures/expiry-strike?expiry=${expiry}`,
+        label: 'spot-exposures/expiry-strike'
+      }
+    ];
+
+    let result = null;
+    for (const ep of endpoints) {
+      result = await tryGexEndpoint(ep.url, key, ticker, expiry, realPrice, ep.label);
+      if (result) {
+        log(`✓ ${ticker} ${expiry} loaded via ${result.label}`, 'ok');
+        break;
+      }
+    }
+
+    if (!result) {
+      log(`✗ ${ticker} ${expiry}: no data available from any UW endpoint`, 'err');
+      // Cache an empty marker so renderHeatseeker can show "NO DATA" instead of $0.0K rows
+      dayCache[ticker+expiry] = { strikes: [], underlying_price: realPrice, gamma_flip: null, net_gex: 0, net_gex_label: 'unknown', empty: true };
+      if (dayIdx !== undefined) {
+        setEl('dcflip-'+dayIdx, 'flip: —');
+        const b = document.getElementById('dcbadge-'+dayIdx);
+        if (b) { b.textContent = 'N/A'; b.className = 'dc-badge unk'; }
+      }
+      return null;
+    }
+
+    dayCache[ticker+expiry] = result.data;
+    if (dayIdx !== undefined) updateDayCardBadge(result.data, dayIdx);
+    return result.data;
+  } catch(e) { log('Error '+ticker+' '+expiry+': '+e.message,'err'); return null; }
+}
+
+// Helper: log the shape of the first response we see per endpoint, so we can
+// see what UW is actually returning (field names, presence of expiry tag, etc.)
+const loggedShape = {};
+function logResponseShapeOnce(cacheKey, uwResp) {
+  if (loggedShape[cacheKey]) return;
+  const rows = (uwResp && uwResp.data) || [];
+  if (rows.length === 0) {
+    log(`${cacheKey}: empty data array`, 'info');
+  } else {
+    const firstRowKeys = Object.keys(rows[0]).join(', ');
+    log(`${cacheKey}: ${rows.length} rows, fields: [${firstRowKeys}]`, 'info');
+  }
+  loggedShape[cacheKey] = true;
+}
+
+// Helper to update the Weekly Breakdown day-card badge after fetch
+function updateDayCardBadge(data, dayIdx) {
+  const flip = data.gamma_flip, regime = data.net_gex_label;
+  setEl('dcflip-'+dayIdx, flip ? 'flip: '+fp(flip) : 'flip: —');
+  const b = document.getElementById('dcbadge-'+dayIdx);
+  if(b){ b.textContent = regime==='positive'?'POS':regime==='negative'?'NEG':'—'; b.className='dc-badge '+(regime==='positive'?'pos':regime==='negative'?'neg':'unk'); }
+}
+
+async function fetchAll() {
+  const key    = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker-input').value.toUpperCase().trim() || 'AMD';
+  if (!key) { log('No API key.','err'); return; }
+  const dot = document.getElementById('live-dot');
+  dot.className = 'ldot fetching';
+  setEl('live-txt', 'FETCHING…');
+  log('Fetching '+ticker+' GEX for '+currentExpiry+'…','info');
+  const data = await fetchExpiry(ticker, currentExpiry, parseInt(currentDayId.replace('day-','')));
+  if (data) {
+    updateUI(data, currentExpiry);
+    dot.className = 'ldot live';
+    setEl('live-txt', ticker+' LIVE');
+    setEl('last-fetch', 'Updated '+new Date().toLocaleTimeString());
+    log('✓ '+ticker+' active tab updated.','ok');
+    renderHeatseeker();
+
+    // Fetch the unusual options flow for this ticker and update Heavy Flow card.
+    // Now ALSO reuses the same trade data to populate chart arrows.
+    // (Uses UW's /option-trades/flow-alerts — 1 API call serves two features.)
+    fetchFlowSummary(ticker, key).then(flow => {
+      const el = document.getElementById('hf-value');
+      if (!el) return;
+      if (!flow || flow.total === 0) {
+        el.textContent = 'No unusual flow detected';
+        el.className = 'hf-value';
+        return;
+      }
+      const cm = flow.callPrem / 1e6, pm = flow.putPrem / 1e6;
+      let label, cls;
+      if (flow.callPrem > flow.putPrem * 1.5) { label = 'HEAVY CALL BUYING'; cls = 'hf-value bull'; }
+      else if (flow.putPrem > flow.callPrem * 1.5) { label = 'HEAVY PUT BUYING'; cls = 'hf-value bear'; }
+      else { label = 'MIXED FLOW'; cls = 'hf-value mixed'; }
+      el.className = cls;
+      el.innerHTML = `${label} &nbsp; · &nbsp; Calls $${cm.toFixed(2)}M (${flow.callCount}) &nbsp; vs &nbsp; Puts $${pm.toFixed(2)}M (${flow.putCount})`;
+
+      // Use the same trade data to populate chart arrows (no extra API call)
+      if (flow.trades && flow.trades.length > 0) {
+        // Wait a moment for chart to be initialized, then update arrows
+        const tryUpdate = () => {
+          if (netFlowChart) updateChartArrows(flow.trades);
+          else setTimeout(tryUpdate, 200);  // retry if chart not ready yet
+        };
+        tryUpdate();
+      }
+    });
+
+    // Fetch and update the Net Flow intraday chart + breakdown stats (2 credits)
+    updateNetFlowChart(ticker, key);
+    updateNetFlowStats(ticker, key);
+  } else {
+    dot.className = 'ldot err';
+    setEl('live-txt','ERROR');
+  }
+}
+
+async function fetchHeatseeker() {
+  const key    = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
+  if (!key) { alert("Please enter API Key first."); return; }
+  const btn = document.getElementById('btn-heatseeker');
+  btn.disabled = true;
+
+  // Only fetch expirations we don't already have in cache.
+  // If you Start on AMD (cached May 15), then click Fetch All 5, this only
+  // costs 4 credits (May 22, 29, Jun 5, Jun 12) — not 5.
+  // An "empty" cache entry (UW returned no data) is also treated as cached so
+  // we don't keep retrying the same dead endpoints.
+  const needsFetch = activeExpiries
+    .map((date, index) => ({ date, index }))
+    .filter(({ date }) => !dayCache[ticker + date]);
+
+  if (needsFetch.length === 0) {
+    log('✓ All 5 expirations already cached — no credits used', 'ok');
+    renderHeatseeker();
+    refreshConfluenceAfterFetch(ticker);
+    btn.textContent = '⚡ FETCH ALL 5';
+    btn.disabled = false;
+    return;
+  }
+
+  btn.textContent = `FETCHING ${needsFetch.length}...`;
+  log(`Fetching ${needsFetch.length} uncached expiration${needsFetch.length>1?'s':''} (~${needsFetch.length} credit${needsFetch.length>1?'s':''})`, 'info');
+
+  const promises = needsFetch.map(({ date, index }) => fetchExpiry(ticker, date, index));
+  await Promise.all(promises);
+  renderHeatseeker();
+  refreshConfluenceAfterFetch(ticker);
+  log(`✓ HeatSeeker fully updated (${needsFetch.length} new fetches).`, 'ok');
+  btn.textContent = '⚡ FETCH ALL 5';
+  btn.disabled = false;
+}
+
+// After Fetch All 5, rebuild the confluence strip using the currently-displayed expiry
+// as Method A and the freshly-aggregated all-expiry data as Method B.
+function refreshConfluenceAfterFetch(ticker) {
+  const singleData = dayCache[ticker + currentExpiry];
+  const price = singleData?.underlying_price || 0;
+  if (singleData && price) {
+    buildConfluenceStrip(singleData, ticker, price);
+    log('Confluence check updated across all cached expirations.', 'ok');
+  }
+}
+
+// ────────────────────────────────────────────
+// LEVEL MAP & UI UPDATER
+// ────────────────────────────────────────────
+function buildLevelMap(data, ticker) {
+  const mapEl = document.getElementById('level-map');
+  const price = data.underlying_price || 0;
+  const flip  = data.gamma_flip;
+  if (!price || !flip) {
+    mapEl.innerHTML = '<div style="font-family:var(--mono);font-size:13px;color:var(--text3);padding:24px 0;text-align:center;">Waiting for data...</div>';
+    return;
+  }
+
+  const hs = deriveLevelsFromHeatseeker(data);
+  const { cwall, pwall } = deriveWalls(data);
+  const spot = price;
+  const levels = [];
+
+  if (hs) {
+    // ── HEATSEEKER MODE: use real options-concentration levels ──
+
+    // CEILING (above spot)
+    const ceilLbl = (hs.callWall && hs.callWall > price) ? 'Call Wall / Ceiling' : 'Squeeze Extension';
+    levels.push({ price: hs.ceilAbove, label: ceilLbl, cls:'lr-extended', tag:'CEILING', tagCls:'lr-ceiling' });
+
+    // SPOT
+    levels.push({ price: spot, label:'SPOT — Current', cls:'lr-spot', tag:'WATCH', tagCls:'' });
+
+    // PIN 1 (highest +GEX below spot) — the primary magnet
+    if (hs.pin1 && hs.pin1 < spot - 0.1) {
+      levels.push({ price: hs.pin1, label:'Max GEX Pin ★', cls:'lr-magnet', tag:'BUY CALLS', tagCls:'' });
+    }
+    // PIN 2 (second strongest +GEX below spot) — aggressive buy zone
+    if (hs.pin2 && Math.abs(hs.pin2 - (hs.pin1 ?? spot)) > 0.5) {
+      levels.push({ price: hs.pin2, label:'2nd Pin ★', cls:'lr-minmove', tag:'BUY CALLS', tagCls:'' });
+    }
+    // PIN 3 (third support) — only if meaningfully separate from gamma flip and pin2
+    if (hs.pin3 && Math.abs(hs.pin3 - (hs.pin2 ?? spot)) > 0.5 && hs.pin3 > flip + 1) {
+      levels.push({ price: hs.pin3, label:'3rd Pin', cls:'lr-flipzone', tag:'WATCH', tagCls:'' });
+    }
+    // GAMMA FLIP (from API — different concept than max-GEX pin)
+    const dedupeFlip = [hs.pin1, hs.pin2, hs.pin3].some(p => p && Math.abs(p - flip) < 1);
+    if (flip && !dedupeFlip) {
+      levels.push({ price: flip, label:'Gamma Flip', cls:'lr-flip', tag:'WATCH', tagCls:'' });
+    }
+    // PUT WALL (strongest -GEX below spot)
+    if (hs.putWall && hs.putWall < flip - 0.5) {
+      levels.push({ price: hs.putWall, label:'Put Wall / Neg GEX', cls:'lr-putwall', tag:'BUY CALLS', tagCls:'' });
+    }
+    // BREAKDOWN (2nd most -GEX or below put wall)
+    if (hs.breakdown && (!hs.putWall || hs.breakdown < hs.putWall - 0.5)) {
+      levels.push({ price: hs.breakdown, label:'Breakdown / Accel', cls:'lr-breakdown', tag:'PUTS ONLY', tagCls:'' });
+    }
+  } else {
+    // ── FALLBACK MODE: calculated levels (when strikes array unavailable) ──
+    const expMove = price * 0.038;
+    const ceil = (cwall && cwall > price) ? cwall : (price + expMove);
+    levels.push({ price: ceil, label:'Extended / Ceiling', cls:'lr-extended', tag:'CEILING', tagCls:'lr-ceiling' });
+    levels.push({ price: spot, label:'SPOT — Current', cls:'lr-spot', tag:'WATCH', tagCls:'' });
+    levels.push({ price: flip, label:'MAX GEX', cls:'lr-magnet', tag:'BUY CALLS', tagCls:'' });
+    levels.push({ price: price - expMove, label:'10 Min Move', cls:'lr-minmove', tag:'BUY CALLS', tagCls:'' });
+    levels.push({ price: flip * 0.953, label:'Gamma Flip Zone', cls:'lr-flip', tag:'WATCH', tagCls:'' });
+    if (pwall) levels.push({ price: pwall, label:'PUT WALL', cls:'lr-putwall', tag:'BUY CALLS', tagCls:'' });
+    if (pwall) levels.push({ price: pwall * 0.985, label:'Breakdown', cls:'lr-breakdown', tag:'PUTS ONLY', tagCls:'' });
+  }
+
+  levels.sort((a, b) => b.price - a.price);
+
+  const negZoneHi = hs?.flip ?? flip;
+  const negZoneLo = hs?.putWall ?? pwall ?? (flip * 0.953);
+
+  mapEl.innerHTML = levels.map(l => `
+    <div class="level-row ${l.cls}" style="margin-bottom:6px;">
+      <div class="level-price">${fp(l.price)}</div>
+      <div class="level-label" style="font-family:var(--mono);font-size:12px;color:var(--text2);">${l.label}</div>
+      <div class="level-tag ${l.tagCls}">${l.tag}</div>
+    </div>
+  `).join('') + `
+    <div class="neg-gex-warning">
+      ⚠ Neg GEX zone ${fp(negZoneLo)} – ${fp(negZoneHi)}: price accelerates below this band, no bounces.
+    </div>`;
+}
+
+function updateUI(data, expiry) {
+  const ticker  = document.getElementById('ticker-input').value.toUpperCase().trim() || 'AMD';
+  const flip    = data.gamma_flip;
+  const { cwall, pwall } = deriveWalls(data);
+  const netgex  = data.net_gex;
+  const regime  = data.net_gex_label;
+  const price   = data.underlying_price || 0;
+
+  // ── HeatSeeker-derived REAL levels (preferred source of truth) ──
+  // Falls back to API walls / calculated values only when strikes data unavailable.
+  const hs       = deriveLevelsFromHeatseeker(data);
+  const eMagnet  = hs?.magnet    ?? flip;                                          // strongest GEX strike overall (real magnet)
+  const ePin1    = hs?.pin1      ?? flip;                                          // top pin below spot (primary pullback target)
+  const ePin2    = hs?.pin2      ?? (price ? price * 0.962 : flip * 0.99);        // 2nd pin (aggressive buy zone)
+  const eCwall   = hs?.callWall  ?? cwall;                                         // real ceiling above price
+  const ePwall   = hs?.putWall   ?? pwall;                                         // real floor (most -GEX below)
+  const eCeil    = hs?.ceilAbove ?? ((eCwall && eCwall > price) ? eCwall : price + price * 0.038);
+  const eBreak   = hs?.breakdown ?? (ePwall ? ePwall * 0.985 : null);
+  const eExpMove = price ? price * 0.038 : 0;  // still used for range display in subheader
+
+  setEl('h-sym', ticker);
+  setEl('h-price', price ? fp2(price) : '—');
+  setEl('h-netgex', fgex(netgex));
+  setEl('h-magnet', fp(eMagnet));
+  const chEl = document.getElementById('h-change');
+  if (chEl) { chEl.textContent = regime === 'positive' ? '+GEX POSITIVE' : regime === 'negative' ? '-GEX NEGATIVE' : '—'; chEl.className = 'hero-change' + (regime==='negative'?' neg':''); }
+  setEl('sh-flip', fp(flip));
+  if (price && eExpMove) {
+    setEl('sh-expmove', `±${fp2(eExpMove)} (${(eExpMove/price*100).toFixed(1)}%)`);
+    setEl('sh-range', `${fp2(price - eExpMove)} – ${fp2(price + eExpMove)}`);
+  }
+  setEl('sh-trend', regime === 'positive' ? '↑↑ BULLISH STRUCTURE' : regime === 'negative' ? '↓↓ BEARISH STRUCTURE' : '↔ MIXED');
+  setEl('gc-magnet', fp(eMagnet));
+  setEl('gc-netgex', fgex(netgex));
+  setEl('gc-cwall', fp(eCwall));
+  setEl('gc-pwall', fp(ePwall));
+  const gcNet = document.getElementById('gc-netgex');
+  if(gcNet) gcNet.className = 'gex-sum-val ' + (netgex >= 0 ? 'green' : 'red');
+
+  setEl('pi-ticker-lbl', ticker + ' PARABOLIC READ');
+  setEl('pi-close', price ? fp2(price) + (price > (eMagnet||0) ? ' — ABOVE magnet' : ' — BELOW magnet') : '—');
+  setEl('pi-magnet', fp(eMagnet) + (eMagnet ? ` = ${fgex(netgex)}` : ''));
+  setEl('pi-cwall', fp(eCwall) + ' = EXIT ONLY');
+  setEl('pi-pwall', fp(ePwall) + ' = BUY CALLS (Bounce)');
+  setEl('pi-trap', fp(eBreak) + ' = FAST MOVE below');
+  setEl('pi-negzone', (ePwall && flip) ? `${fp(ePwall)}–${fp(flip)}` : '—');
+  setEl('pi-bias', regime === 'positive' ? 'Buy Pullbacks' : 'Defensive / Fade Rallies');
+
+  // Entry window signal still uses the Max GEX pin
+  setEl('ew-signal', `${fp(ePin1)} touch + green candle + flow`);
+
+  setEl('bf-context', regime === 'positive' ? 'Bullish Structure' : 'Bearish / Mixed');
+  setEl('bf-magnet', `${fp(ePin1)} = best call entry`);
+  setEl('wl-up', fp(eCeil));
+  setEl('wl-down', fp(ePwall));
+  setEl('wl-negzone', `${fp(ePwall)}–${fp(flip)}`);
+  const warnBox = document.getElementById('br-warning');
+  if (warnBox) warnBox.innerHTML = `<strong>✓ Active Trade Plan</strong><br>Levels are currently mapped and valid for ${ticker}.`;
+
+  if (data.strikes) renderGexChart(data.strikes);
+  buildLevelMap(data, ticker);
+  buildConfluenceStrip(data, ticker, price);
+  prevData[expiry] = data;
+}
+
+// ────────────────────────────────────────────
+// TAB SWITCHING & TIMERS
+// ────────────────────────────────────────────
+async function switchDay(expiry, label, dayId) {
+  const ticker = document.getElementById('ticker-input').value.toUpperCase().trim()||'AMD';
+  document.querySelectorAll('.day-card').forEach(d=>d.classList.remove('active'));
+  document.getElementById(dayId)?.classList.add('active');
+  currentExpiry = expiry; currentDayId = dayId;
+  const sel = document.getElementById('expiry-sel');
+  for(let o of sel.options) if(o.value===expiry){ o.selected=true; break; }
+  const cached = dayCache[ticker+expiry];
+  if(cached){ updateUI(cached,expiry); log('Cache: '+label,'info'); }
+  else if(timer) await fetchAll();
+}
+
+function onExpirySel() {
+  const sel = document.getElementById('expiry-sel');
+  currentExpiry = sel.value;
+  const idx = sel.selectedIndex;
+  currentDayId = 'day-'+idx;
+  if(timer) fetchAll();
+}
+
+function startCountdown() {
+  clearInterval(countdown);
+  countdownSec = parseInt(document.getElementById('interval-sel').value);
+  const el = document.getElementById('countdown-txt');
+  countdown = setInterval(() => {
+    countdownSec--;
+    if(countdownSec<=0){ if(el) el.textContent=''; }
+    else { const m=Math.floor(countdownSec/60),s=countdownSec%60; if(el) el.textContent='next in '+(m>0?m+'m ':'')+s+'s'; }
+  },1000);
+}
+
+async function startDash() {
+  const key    = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
+  if(!key){ log('Enter API key first.','err'); return; }
+  if(!ticker){ log('Enter a ticker first.','err'); return; }
+  prevData={}; dayCache={};
+  // Clear spot-price cache too — new ticker needs a fresh price lookup
+  Object.keys(spotPriceCache).forEach(k => delete spotPriceCache[k]);
+  if(gexChart){ gexChart.destroy(); gexChart=null; }
+  document.getElementById('stop-btn').style.display='';
+  setEl('h-sym', ticker);
+  log('Started: '+ticker,'ok');
+
+  // Rebuild expiration dates based on ticker class (0 API calls)
+  const tickerDates = generateExpirations(ticker);
+  if (tickerDates.length > 0) {
+    rebuildExpiryUI(tickerDates);
+    const cls = TICKER_PATTERN[ticker] || 'fri';
+    const clsLabel = cls === 'daily' ? 'daily M-F' : cls === 'mwf' ? 'Mon/Wed/Fri weeklies' : 'Friday weeklies';
+    log(ticker+' expiration pattern: '+clsLabel+' — '+tickerDates.join(', '),'ok');
+  }
+
+  await fetchAll();
+  clearInterval(timer);
+  const secs = parseInt(document.getElementById('interval-sel').value);
+  timer = setInterval(async()=>{ await fetchAll(); startCountdown(); }, secs*1000);
+  startCountdown();
+}
+
+function stopDash() {
+  clearInterval(timer); clearInterval(countdown); timer=null;
+  const dot = document.getElementById('live-dot');
+  dot.className='ldot err';
+  setEl('live-txt','PAUSED');
+  document.getElementById('stop-btn').style.display='none';
+  setEl('countdown-txt','');
+}
+
+function startClock() {
+  const clockEl = document.getElementById('live-clock');
+  if (!clockEl) return;
+  setInterval(() => {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+  }, 1000);
+}
+
+startClock();
+initDates();
+
+// ── Register service worker (enables install-as-app + offline shell) ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log('Service worker registered:', reg.scope))
+      .catch(err => console.log('Service worker registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
