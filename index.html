@@ -2211,6 +2211,12 @@ async function startDash() {
   const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
   if(!key){ log('Enter API key first.','err'); return; }
   if(!ticker){ log('Enter a ticker first.','err'); return; }
+  // Persist key + ticker so they auto-fill next time the app opens.
+  // Wrapped in try/catch so it degrades gracefully where storage is unavailable.
+  try {
+    localStorage.setItem('uw_api_key', key);
+    localStorage.setItem('uw_last_ticker', ticker);
+  } catch(e) { /* storage unavailable — no persistence, but app still works */ }
   prevData={}; dayCache={};
   // Clear spot-price cache too — new ticker needs a fresh price lookup
   Object.keys(spotPriceCache).forEach(k => delete spotPriceCache[k]);
@@ -2252,6 +2258,23 @@ function startClock() {
     clockEl.textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
   }, 1000);
 }
+
+// ── Restore saved API key + ticker from previous session ──
+(function restoreSaved() {
+  try {
+    const savedKey = localStorage.getItem('uw_api_key');
+    const savedTicker = localStorage.getItem('uw_last_ticker');
+    if (savedKey) {
+      const keyEl = document.getElementById('api-key');
+      if (keyEl) keyEl.value = savedKey;
+    }
+    if (savedTicker) {
+      const tEl = document.getElementById('ticker-input');
+      if (tEl) tEl.value = savedTicker;
+    }
+    if (savedKey) log('API key restored from saved session.', 'ok');
+  } catch(e) { /* storage unavailable — start fresh */ }
+})();
 
 startClock();
 initDates();
