@@ -218,10 +218,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .hs-wrap{height:320px; overflow-y:auto; background:var(--bg3); border:1px solid var(--border); border-radius:4px;}
 .hs-wrap::-webkit-scrollbar{width:6px; height:6px;}
 .hs-wrap::-webkit-scrollbar-thumb{background:var(--border2); border-radius:3px;}
-.hs-table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px;}
-.hs-table th, .hs-table td{padding:5px 8px; text-align:right; border:1px solid rgba(255,255,255,0.05); white-space:nowrap;}
-.hs-table th{position:sticky; top:0; background:#111; z-index:10; color:var(--text3); border-bottom:1px solid var(--border2);}
-.hs-table td.strike-col{position:sticky; left:0; background:#181818; z-index:5; font-weight:700; color:var(--text); text-align:left; border-right:1px solid var(--border2);}
+.hs-table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:13px;}
+.hs-table th, .hs-table td{padding:7px 10px; text-align:right; border:1px solid rgba(255,255,255,0.05); white-space:nowrap;}
+.hs-table th{position:sticky; top:0; background:#111; z-index:10; color:var(--text3); border-bottom:1px solid var(--border2); font-size:12px;}
+.hs-table td.strike-col{position:sticky; left:0; background:#181818; z-index:5; font-weight:700; color:var(--text); text-align:left; border-right:1px solid var(--border2); font-size:13px;}
 .hs-btn{background:transparent; border:1px solid var(--amber); color:var(--amber); padding:2px 8px; border-radius:3px; cursor:pointer; font-size:10px; font-weight:700; transition:0.2s;}
 .hs-btn:hover{background:var(--amber-dim);}
 .hs-btn:disabled{opacity:0.5; cursor:not-allowed;}
@@ -369,7 +369,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="hero-change" id="h-change">—</div>
   </div>
   <div>
-    <div class="hero-name" id="h-name">ADVANCED MICRO DEVICES <span class="uw-tag">🐋 UW</span></div>
+    <div class="hero-name" id="h-name">— <span class="uw-tag">🐋 UW</span></div>
     <div class="hero-name"><small id="h-sub">GEX READ + TRADE PLAN — WEEKLY <span id="h-week-label">MAY 11, 2026</span></small></div>
   </div>
   <div class="hero-stat">
@@ -575,10 +575,18 @@ const fgex = v => {
   if (a >= 1e6) return s + '$' + (a/1e6).toFixed(2) + 'M';
   return s + '$' + Math.round(a).toLocaleString();
 };
+// Adaptive currency formatter for HeatSeeker cells.
+// Scales unit (M/K/$) so even very small NDX-style values show meaningful precision.
 const fnumK = v => {
-  if (v == null || isNaN(v)) return '$0.0K';
+  if (v == null || isNaN(v)) return '$0';
   const a = Math.abs(v), s = v < 0 ? '-' : '';
-  return s + '$' + (a/1000).toFixed(1) + 'K';
+  if (a === 0)     return '$0';
+  if (a >= 1e6)    return s + '$' + (a/1e6).toFixed(2) + 'M';
+  if (a >= 10000)  return s + '$' + (a/1000).toFixed(1) + 'K';
+  if (a >= 1000)   return s + '$' + (a/1000).toFixed(2) + 'K';
+  if (a >= 100)    return s + '$' + Math.round(a);
+  if (a >= 1)      return s + '$' + a.toFixed(1);
+  return s + '$' + a.toFixed(2);
 };
 
 const setEl = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
@@ -879,6 +887,44 @@ const TICKER_PATTERN = {
   'META':'mwf','TSLA':'mwf','NFLX':'mwf','AVGO':'mwf',
   // Default for everything else: Friday-only weeklies (AMD, BABA, MU, etc.)
 };
+
+// Ticker → display name. Purely local — no API cost.
+// For unknown tickers, the helper below falls back to the ticker symbol itself.
+const TICKER_NAMES = {
+  // Index ETFs and indexes
+  'SPY':'S&P 500 ETF','SPX':'S&P 500 INDEX','SPXW':'S&P 500 WEEKLY','XSP':'MINI S&P 500',
+  'QQQ':'NASDAQ-100 ETF','NDX':'NASDAQ-100 INDEX',
+  'IWM':'RUSSELL 2000 ETF','RUT':'RUSSELL 2000 INDEX',
+  'DIA':'DOW JONES ETF','DJX':'DOW JONES INDEX',
+  'VIX':'VOLATILITY INDEX','UVXY':'PROSHARES VIX ST',
+  // Mag 7
+  'AAPL':'APPLE','MSFT':'MICROSOFT','NVDA':'NVIDIA','AMZN':'AMAZON',
+  'GOOGL':'ALPHABET CLASS A','GOOG':'ALPHABET CLASS C','META':'META PLATFORMS',
+  'TSLA':'TESLA',
+  // Other megacaps / popular options names
+  'NFLX':'NETFLIX','AVGO':'BROADCOM','AMD':'ADVANCED MICRO DEVICES','INTC':'INTEL',
+  'MU':'MICRON TECHNOLOGY','TSM':'TAIWAN SEMICONDUCTOR','ASML':'ASML HOLDING',
+  'BABA':'ALIBABA','PLTR':'PALANTIR','COIN':'COINBASE','SHOP':'SHOPIFY',
+  'CRM':'SALESFORCE','ORCL':'ORACLE','ADBE':'ADOBE','SNOW':'SNOWFLAKE',
+  'AMC':'AMC ENTERTAINMENT','GME':'GAMESTOP','HOOD':'ROBINHOOD',
+  'JPM':'JPMORGAN CHASE','BAC':'BANK OF AMERICA','WFC':'WELLS FARGO',
+  'GS':'GOLDMAN SACHS','MS':'MORGAN STANLEY','C':'CITIGROUP',
+  'BRK.B':'BERKSHIRE B','BRKB':'BERKSHIRE B','V':'VISA','MA':'MASTERCARD',
+  'WMT':'WALMART','TGT':'TARGET','COST':'COSTCO','HD':'HOME DEPOT',
+  'DIS':'WALT DISNEY','UBER':'UBER','LYFT':'LYFT','ABNB':'AIRBNB',
+  'PYPL':'PAYPAL','SQ':'BLOCK','SOFI':'SOFI TECHNOLOGIES',
+  'XOM':'EXXON MOBIL','CVX':'CHEVRON','OXY':'OCCIDENTAL',
+  'PFE':'PFIZER','JNJ':'JOHNSON & JOHNSON','LLY':'ELI LILLY',
+  'F':'FORD','GM':'GENERAL MOTORS','RIVN':'RIVIAN','LCID':'LUCID',
+  'BA':'BOEING','CAT':'CATERPILLAR','GE':'GE AEROSPACE',
+  'NOW':'SERVICENOW','SNDK':'SANDISK','ROKU':'ROKU','SNAP':'SNAP'
+};
+
+function getCompanyName(ticker) {
+  if (!ticker) return '';
+  const t = ticker.toUpperCase().trim();
+  return TICKER_NAMES[t] || t;   // fall back to the ticker symbol itself
+}
 
 // US market holidays for 2026 (full-day closures)
 const US_HOLIDAYS_2026 = new Set([
@@ -2129,6 +2175,9 @@ function updateUI(data, expiry) {
 
   setEl('h-sym', ticker);
   setEl('h-price', price ? fp2(price) : '—');
+  // Update company name (with UW pill preserved) from local map — zero API cost
+  const hNameEl = document.getElementById('h-name');
+  if (hNameEl) hNameEl.innerHTML = `${getCompanyName(ticker)} <span class="uw-tag">🐋 UW</span>`;
   setEl('h-netgex', fgex(netgex));
   setEl('h-magnet', fp(eMagnet));
   const chEl = document.getElementById('h-change');
@@ -2223,6 +2272,8 @@ async function startDash() {
   if(gexChart){ gexChart.destroy(); gexChart=null; }
   document.getElementById('stop-btn').style.display='';
   setEl('h-sym', ticker);
+  const hNameEl2 = document.getElementById('h-name');
+  if (hNameEl2) hNameEl2.innerHTML = `${getCompanyName(ticker)} <span class="uw-tag">🐋 UW</span>`;
   log('Started: '+ticker,'ok');
 
   // Rebuild expiration dates based on ticker class (0 API calls)
