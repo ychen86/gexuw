@@ -166,6 +166,46 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 @media(max-width:1000px){.charts-row{grid-template-columns:1fr;}}
 .chart-half{display:flex;flex-direction:column;gap:10px; min-width: 0;}
+
+/* ─── Two-column main content grid using template-areas ─── */
+/* Left column dictates total height: SVP defines row 1, Net Flow defines row 2.
+   HeatSeeker spans both rows and is constrained to that combined height — its
+   matrix scrolls internally instead of growing the page. */
+.content-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:auto auto;
+  grid-template-areas:
+    "svp     heatseeker"
+    "netflow heatseeker";
+  gap:16px;
+}
+.content-grid > .svp-section     { grid-area: svp; min-width: 0; }
+.content-grid > .net-flow-section{ grid-area: netflow; min-width: 0; margin-top: 0; }
+.content-grid > .heatseeker-section{
+  grid-area: heatseeker;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.content-grid > .heatseeker-section .hs-wrap{
+  /* Fallback height; JS overrides with the exact left-column height */
+  height: 700px;
+  min-height: 0;
+  overflow-y: auto;
+}
+@media(max-width:1000px){
+  .content-grid{
+    grid-template-columns:1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "svp"
+      "heatseeker"
+      "netflow";
+  }
+  .content-grid > .heatseeker-section .hs-wrap{height:560px; max-height:560px;}
+}
 .svp-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px; display:flex; justify-content:space-between; align-items:center;}
 .svp-chart-wrap{position:relative;width:100%;height:320px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;}
 .svp-chart-wrap canvas{width:100%!important;}
@@ -222,9 +262,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .hs-table th, .hs-table td{padding:7px 10px; text-align:right; border:1px solid rgba(255,255,255,0.05); white-space:nowrap;}
 .hs-table th{position:sticky; top:0; background:#111; z-index:10; color:var(--text3); border-bottom:1px solid var(--border2); font-size:12px;}
 .hs-table td.strike-col{position:sticky; left:0; background:#181818; z-index:5; font-weight:700; color:var(--text); text-align:left; border-right:1px solid var(--border2); font-size:13px;}
+.atm-pill{display:inline-block;background:#fff;color:#000;font-weight:800;padding:2px 9px;border-radius:11px;letter-spacing:0.3px;font-size:12px;box-shadow:0 0 8px rgba(255,255,255,0.4);}
 .hs-btn{background:transparent; border:1px solid var(--amber); color:var(--amber); padding:2px 8px; border-radius:3px; cursor:pointer; font-size:10px; font-weight:700; transition:0.2s;}
 .hs-btn:hover{background:var(--amber-dim);}
 .hs-btn:disabled{opacity:0.5; cursor:not-allowed;}
+.hs-btn.active{background:var(--amber);color:#000;}
+.hs-btn-group{display:flex;gap:4px;}
 
 /* pro insight */
 .pro-insight{background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin:0 18px 16px 18px;padding:14px 16px;}
@@ -437,17 +480,61 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
         <div class="hf-value" id="hf-value">Waiting for flow data...</div>
       </div>
 
-      <div class="charts-row">
-        <div class="chart-half">
+      <div class="content-grid">
+        <div class="chart-half svp-section">
           <div class="svp-title">STRIKE VOLUME PROFILE</div>
           <div class="svp-chart-wrap">
             <canvas id="gex-chart" role="img" aria-label="GEX per-strike bar chart">GEX chart loads after data fetch.</canvas>
           </div>
         </div>
-        <div class="chart-half">
+
+        <!-- Net Flow intraday chart -->
+        <div class="net-flow-section">
+          <div class="svp-title">
+            <span>NET FLOW — INTRADAY OPTIONS PREMIUM (<span id="nf-ticker-lbl">—</span>)</span>
+            <span style="display:flex;align-items:center;gap:10px;">
+              <span id="nf-status" style="font-family:var(--mono);font-size:11px;color:var(--text3);">—</span>
+              <button class="hs-btn" id="btn-nf-refresh" onclick="refreshNetFlow()" title="Refresh net flow data (3 credits: ticks + volume + flow)">↻ REFRESH</button>
+            </span>
+          </div>
+
+          <!-- Aggregate stats strip -->
+          <div class="nf-stats-wrap">
+            <div class="nf-stats-row">
+              <div class="nf-stat"><span class="nf-stat-lbl">Vol</span><span class="nf-stat-val" id="nf-vol">—</span></div>
+              <div class="nf-stat"><span class="nf-stat-lbl">Prem</span><span class="nf-stat-val" id="nf-prem">—</span></div>
+              <div class="nf-stat"><span class="nf-stat-lbl">Net</span><span class="nf-stat-val" id="nf-net">—</span></div>
+              <div class="nf-stat"><span class="nf-stat-lbl">NCP</span><span class="nf-stat-val" id="nf-ncp">—</span></div>
+              <div class="nf-stat"><span class="nf-stat-lbl">NPP</span><span class="nf-stat-val" id="nf-npp">—</span></div>
+            </div>
+            <div class="nf-breakdown-row">
+              <div class="nf-bd"><span class="nf-bd-dot call-buy"></span><span class="nf-bd-lbl">Call Bought</span><span class="nf-bd-val" id="nf-call-bought">—</span></div>
+              <div class="nf-bd"><span class="nf-bd-dot call-sell"></span><span class="nf-bd-lbl">Call Sold</span><span class="nf-bd-val" id="nf-call-sold">—</span></div>
+              <div class="nf-bd"><span class="nf-bd-dot put-buy"></span><span class="nf-bd-lbl">Put Bought</span><span class="nf-bd-val" id="nf-put-bought">—</span></div>
+              <div class="nf-bd"><span class="nf-bd-dot put-sell"></span><span class="nf-bd-lbl">Put Sold</span><span class="nf-bd-val" id="nf-put-sold">—</span></div>
+            </div>
+            <div class="nf-sent-row">
+              <span class="nf-sent-lbl">NET SENTIMENT</span>
+              <div class="nf-sent-bar-wrap">
+                <div class="nf-sent-bar-bear" id="nf-sent-bear-bar"></div>
+                <div class="nf-sent-bar-bull" id="nf-sent-bull-bar"></div>
+              </div>
+              <span class="nf-sent-pct"><span class="bear" id="nf-sent-bear-lbl">Bearish —</span> · <span class="bull" id="nf-sent-bull-lbl">Bullish —</span></span>
+            </div>
+          </div>
+
+          <div class="net-flow-wrap">
+            <canvas id="net-flow-chart" role="img" aria-label="Net premium flow line chart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-half heatseeker-section">
           <div class="svp-title">
             <span>HEATSEEKER MATRIX</span>
-            <button class="hs-btn" id="btn-heatseeker" onclick="fetchHeatseeker()">⚡ FETCH ALL 5 (5 CREDITS)</button>
+            <div class="hs-btn-group">
+              <button class="hs-btn active" id="btn-heatseeker-5"  onclick="fetchHeatseeker(5)"  title="Fetch the 5 primary expirations">⚡ FETCH 5</button>
+              <button class="hs-btn"        id="btn-heatseeker-10" onclick="fetchHeatseeker(10)" title="Extend the matrix to 10 expirations">⚡ FETCH 10</button>
+            </div>
           </div>
           <div class="hs-wrap">
             <table class="hs-table" id="hs-table">
@@ -455,46 +542,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
               <tbody id="hs-body"><tr><td style="text-align:center; padding:30px;">Click fetch to load map</td></tr></tbody>
             </table>
           </div>
-        </div>
-      </div>
-
-      <!-- Net Flow intraday chart -->
-      <div class="net-flow-section">
-        <div class="svp-title">
-          <span>NET FLOW — INTRADAY OPTIONS PREMIUM (<span id="nf-ticker-lbl">—</span>)</span>
-          <span style="display:flex;align-items:center;gap:10px;">
-            <span id="nf-status" style="font-family:var(--mono);font-size:11px;color:var(--text3);">—</span>
-            <button class="hs-btn" id="btn-nf-refresh" onclick="refreshNetFlow()" title="Refresh net flow data (3 credits: ticks + volume + flow)">↻ REFRESH</button>
-          </span>
-        </div>
-
-        <!-- Aggregate stats strip -->
-        <div class="nf-stats-wrap">
-          <div class="nf-stats-row">
-            <div class="nf-stat"><span class="nf-stat-lbl">Vol</span><span class="nf-stat-val" id="nf-vol">—</span></div>
-            <div class="nf-stat"><span class="nf-stat-lbl">Prem</span><span class="nf-stat-val" id="nf-prem">—</span></div>
-            <div class="nf-stat"><span class="nf-stat-lbl">Net</span><span class="nf-stat-val" id="nf-net">—</span></div>
-            <div class="nf-stat"><span class="nf-stat-lbl">NCP</span><span class="nf-stat-val" id="nf-ncp">—</span></div>
-            <div class="nf-stat"><span class="nf-stat-lbl">NPP</span><span class="nf-stat-val" id="nf-npp">—</span></div>
-          </div>
-          <div class="nf-breakdown-row">
-            <div class="nf-bd"><span class="nf-bd-dot call-buy"></span><span class="nf-bd-lbl">Call Bought</span><span class="nf-bd-val" id="nf-call-bought">—</span></div>
-            <div class="nf-bd"><span class="nf-bd-dot call-sell"></span><span class="nf-bd-lbl">Call Sold</span><span class="nf-bd-val" id="nf-call-sold">—</span></div>
-            <div class="nf-bd"><span class="nf-bd-dot put-buy"></span><span class="nf-bd-lbl">Put Bought</span><span class="nf-bd-val" id="nf-put-bought">—</span></div>
-            <div class="nf-bd"><span class="nf-bd-dot put-sell"></span><span class="nf-bd-lbl">Put Sold</span><span class="nf-bd-val" id="nf-put-sold">—</span></div>
-          </div>
-          <div class="nf-sent-row">
-            <span class="nf-sent-lbl">NET SENTIMENT</span>
-            <div class="nf-sent-bar-wrap">
-              <div class="nf-sent-bar-bear" id="nf-sent-bear-bar"></div>
-              <div class="nf-sent-bar-bull" id="nf-sent-bull-bar"></div>
-            </div>
-            <span class="nf-sent-pct"><span class="bear" id="nf-sent-bear-lbl">Bearish —</span> · <span class="bull" id="nf-sent-bull-lbl">Bullish —</span></span>
-          </div>
-        </div>
-
-        <div class="net-flow-wrap">
-          <canvas id="net-flow-chart" role="img" aria-label="Net premium flow line chart"></canvas>
         </div>
       </div>
     </div>
@@ -562,6 +609,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 let gexChart = null, timer = null, countdown = null, countdownSec = 0;
 let prevData = {}, dayCache = {}, currentExpiry = '', currentDayId = '';
 let activeExpiries = [];
+let heatseekerDates = [];  // Extended HeatSeeker matrix expirations (5 or 10, set by Fetch buttons)
 
 // ────────────────────────────────────────────
 // UTILS
@@ -678,7 +726,9 @@ function aggregateAllExpiries(ticker, price) {
   const agg = {};               // strike → summed net_gex
   let cachedCount = 0;
 
-  activeExpiries.forEach(exp => {
+  // Use heatseekerDates if Fetch 5/10 has been used, otherwise the 5 primary expiries
+  const scope = (heatseekerDates && heatseekerDates.length) ? heatseekerDates : activeExpiries;
+  scope.forEach(exp => {
     const d = dayCache[ticker + exp];
     if (d && d.strikes && d.strikes.length) {
       cachedCount++;
@@ -946,9 +996,9 @@ const HOLIDAY_ROLLBACK = {
   '2026-06-19': '2026-06-18', // Juneteenth → Thursday
 };
 
-// Generate the next 5 expiration dates for a ticker, no API calls needed
-// Skips today (0DTE requires Growth tier on FlashAlpha)
-function generateExpirations(ticker) {
+// Generate the next N expiration dates for a ticker, no API calls needed
+// Default count is 5 (primary set); pass 10 for extended HeatSeeker mode
+function generateExpirations(ticker, count = 5) {
   const cls = TICKER_PATTERN[ticker.toUpperCase()] || 'fri';
   let allowedDays;
   if (cls === 'daily')    allowedDays = [1,2,3,4,5]; // Mon-Fri
@@ -963,9 +1013,10 @@ function generateExpirations(ticker) {
   const dates = [];
   const seen = new Set();
 
-  // Start from today (i=0) if Growth tier, or tomorrow (i=1) if Basic to avoid 0DTE errors
+  // Window scales with count: 10 Fridays = 10 weeks ~70 days, so 180 is safe
   const startOffset = INCLUDE_0DTE ? 0 : 1;
-  for (let i = startOffset; i < 90 && dates.length < 5; i++) {
+  const searchWindow = Math.max(90, count * 14);
+  for (let i = startOffset; i < searchWindow && dates.length < count; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const dow = d.getDay();
@@ -1097,7 +1148,9 @@ function getHeatColor(val, maxAbs) {
 
 function renderHeatseeker() {
   const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
-  const dates = activeExpiries;
+  // Use extended HeatSeeker dates if a Fetch button has been clicked,
+  // otherwise the 5 primary expirations
+  const dates = (heatseekerDates && heatseekerDates.length) ? heatseekerDates : activeExpiries;
   let strikeSet = new Set();
   let maxAbsVal = 1;
   dates.forEach(d => {
@@ -1130,9 +1183,24 @@ function renderHeatseeker() {
   });
   document.getElementById('hs-head').innerHTML = headHtml;
 
+  // Find ATM strike — closest to current spot price for the pill marker
+  const activeDataForAtm = dayCache[ticker + (activeExpiries[0] || '')];
+  const spotForAtm = activeDataForAtm?.underlying_price;
+  let atmStrike = null;
+  if (spotForAtm && sortedStrikes.length > 0) {
+    let smallestDiff = Infinity;
+    sortedStrikes.forEach(s => {
+      const diff = Math.abs(s - spotForAtm);
+      if (diff < smallestDiff) { smallestDiff = diff; atmStrike = s; }
+    });
+  }
+
   let bodyHtml = '';
   sortedStrikes.forEach(strike => {
-    bodyHtml += `<tr><td class="strike-col">${strike.toFixed(1)}</td>`;
+    const strikeLabel = (strike === atmStrike)
+      ? `<span class="atm-pill">${strike.toFixed(1)}</span>`
+      : strike.toFixed(1);
+    bodyHtml += `<tr><td class="strike-col">${strikeLabel}</td>`;
     dates.forEach(d => {
       const data = dayCache[ticker+d];
       let val = null;
@@ -1174,6 +1242,9 @@ function renderHeatseeker() {
       wrap.scrollTop = Math.max(0, rowOffsetTop - (wrapHeight / 2) + (rowHeight / 2));
     }
   }
+
+  // Resync the HeatSeeker box height to match the left column after the matrix renders
+  if (typeof syncHeatseekerHeight === 'function') syncHeatseekerHeight();
 }
 
 // ────────────────────────────────────────────
@@ -1209,9 +1280,20 @@ function transformUWtoFA(uw, ticker, realSpotPrice, targetExpiry) {
       if (filtered.length > 0) {
         rawRows = filtered;
       } else {
-        // No rows matched the requested expiry — log so user can see what's there
+        // No rows matched — return empty strikes so the wrong-expiry data
+        // doesn't contaminate the matrix with far-OTM strikes that look real.
+        // tryGexEndpoint will see empty strikes and try the next URL.
         const uniqueExpiries = [...new Set(rawRows.map(r => normalize(r[expiryField])))].sort();
-        log(`No ${ticker} rows for ${target}. Response has: ${uniqueExpiries.slice(0,4).join(', ')}${uniqueExpiries.length>4?'...':''}`, 'err');
+        log(`No ${ticker} rows for ${target}. Response had: ${uniqueExpiries.slice(0,4).join(', ')}${uniqueExpiries.length>4?'...':''}`, 'err');
+        return {
+          underlying_price: realSpotPrice,
+          gamma_flip: null,
+          net_gex: 0,
+          net_gex_label: 'unknown',
+          call_wall: null,
+          put_wall: null,
+          strikes: []
+        };
       }
     }
     log(`${ticker} ${targetExpiry}: ${rawRows.length} of ${totalRows} rows after filter`, 'info');
@@ -2023,41 +2105,83 @@ async function fetchAll() {
   }
 }
 
-async function fetchHeatseeker() {
+async function fetchHeatseeker(count) {
+  count = (count === 10) ? 10 : 5;  // defensive default
   const key    = document.getElementById('api-key').value.trim();
   const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
   if (!key) { alert("Please enter API Key first."); return; }
-  const btn = document.getElementById('btn-heatseeker');
-  btn.disabled = true;
+  if (!ticker) { alert("Please enter a ticker first."); return; }
 
-  // Only fetch expirations we don't already have in cache.
-  // If you Start on AMD (cached May 15), then click Fetch All 5, this only
-  // costs 4 credits (May 22, 29, Jun 5, Jun 12) — not 5.
-  // An "empty" cache entry (UW returned no data) is also treated as cached so
-  // we don't keep retrying the same dead endpoints.
-  const needsFetch = activeExpiries
+  // Generate up to `count` dates. The first 5 are always the same as
+  // activeExpiries (primary trading set); 10 just adds 5 more for context.
+  heatseekerDates = generateExpirations(ticker, count);
+
+  // Toggle active button styling
+  const btn5  = document.getElementById('btn-heatseeker-5');
+  const btn10 = document.getElementById('btn-heatseeker-10');
+  if (btn5)  btn5.classList.toggle('active',  count === 5);
+  if (btn10) btn10.classList.toggle('active', count === 10);
+  const activeBtn = (count === 10) ? btn10 : btn5;
+  if (btn5)  btn5.disabled  = true;
+  if (btn10) btn10.disabled = true;
+  const restoreLabels = () => {
+    if (btn5)  { btn5.disabled  = false; btn5.textContent  = '⚡ FETCH 5'; }
+    if (btn10) { btn10.disabled = false; btn10.textContent = '⚡ FETCH 10'; }
+  };
+
+  // Skip already-cached expiries to save credits — BUT retry entries cached as empty
+  // (so the user gets fresh attempts on dates UW previously returned nothing for)
+  const needsFetch = heatseekerDates
     .map((date, index) => ({ date, index }))
-    .filter(({ date }) => !dayCache[ticker + date]);
+    .filter(({ date }) => {
+      const c = dayCache[ticker + date];
+      if (!c) return true;                                    // never fetched → fetch
+      if (c.empty) return true;                               // previously empty → retry
+      if (!c.strikes || c.strikes.length === 0) return true;  // no strikes → retry
+      return false;                                            // has real data → skip
+    });
 
   if (needsFetch.length === 0) {
-    log('✓ All 5 expirations already cached — no credits used', 'ok');
+    log(`✓ All ${count} expirations already cached — no credits used`, 'ok');
     renderHeatseeker();
     refreshConfluenceAfterFetch(ticker);
-    btn.textContent = '⚡ FETCH ALL 5';
-    btn.disabled = false;
+    restoreLabels();
     return;
   }
 
-  btn.textContent = `FETCHING ${needsFetch.length}...`;
+  if (activeBtn) activeBtn.textContent = `FETCHING ${needsFetch.length}...`;
   log(`Fetching ${needsFetch.length} uncached expiration${needsFetch.length>1?'s':''} (~${needsFetch.length} credit${needsFetch.length>1?'s':''})`, 'info');
 
-  const promises = needsFetch.map(({ date, index }) => fetchExpiry(ticker, date, index));
-  await Promise.all(promises);
+  // PRE-FETCH spot price ONCE so all parallel calls hit the cache, not 10 simultaneous spot calls
+  await fetchUnderlyingPrice(ticker, key);
+
+  // Fetch in BATCHES of 3 to avoid rate-limiting that causes some expiries
+  // to fall through to wrong-data endpoints. Modest gap between batches.
+  const BATCH = 3;
+  for (let i = 0; i < needsFetch.length; i += BATCH) {
+    const slice = needsFetch.slice(i, i + BATCH);
+    await Promise.all(slice.map(({ date, index }) => fetchExpiry(ticker, date, index)));
+    if (i + BATCH < needsFetch.length) await new Promise(r => setTimeout(r, 150));
+  }
+
   renderHeatseeker();
   refreshConfluenceAfterFetch(ticker);
-  log(`✓ HeatSeeker fully updated (${needsFetch.length} new fetches).`, 'ok');
-  btn.textContent = '⚡ FETCH ALL 5';
-  btn.disabled = false;
+  // Diagnostic: count how many expirations have real data vs are empty
+  let withData = 0, empty = 0;
+  heatseekerDates.forEach(d => {
+    const c = dayCache[ticker + d];
+    if (c && c.strikes && c.strikes.length > 0 && !c.empty) withData++;
+    else empty++;
+  });
+  log(`✓ HeatSeeker updated — ${withData}/${count} expirations have data${empty>0?', '+empty+' empty':''}.`, 'ok');
+  if (empty > 0) {
+    const emptyDates = heatseekerDates.filter(d => {
+      const c = dayCache[ticker + d];
+      return !c || c.empty || !c.strikes || c.strikes.length === 0;
+    });
+    log(`  Empty: ${emptyDates.join(', ')} — UW returned no per-strike data for these dates.`, 'info');
+  }
+  restoreLabels();
 }
 
 // After Fetch All 5, rebuild the confluence strip using the currently-displayed expiry
@@ -2266,11 +2390,16 @@ async function startDash() {
     localStorage.setItem('uw_api_key', key);
     localStorage.setItem('uw_last_ticker', ticker);
   } catch(e) { /* storage unavailable — no persistence, but app still works */ }
-  prevData={}; dayCache={};
+  prevData={}; dayCache={}; heatseekerDates=[];
   // Clear spot-price cache too — new ticker needs a fresh price lookup
   Object.keys(spotPriceCache).forEach(k => delete spotPriceCache[k]);
   if(gexChart){ gexChart.destroy(); gexChart=null; }
   document.getElementById('stop-btn').style.display='';
+  // Reset Fetch buttons to default state (Fetch 5 active, Fetch 10 inactive)
+  const _b5  = document.getElementById('btn-heatseeker-5');
+  const _b10 = document.getElementById('btn-heatseeker-10');
+  if (_b5)  { _b5.classList.add('active');     _b5.disabled = false;  _b5.textContent  = '⚡ FETCH 5'; }
+  if (_b10) { _b10.classList.remove('active'); _b10.disabled = false; _b10.textContent = '⚡ FETCH 10'; }
   setEl('h-sym', ticker);
   const hNameEl2 = document.getElementById('h-name');
   if (hNameEl2) hNameEl2.innerHTML = `${getCompanyName(ticker)} <span class="uw-tag">🐋 UW</span>`;
@@ -2329,6 +2458,41 @@ function startClock() {
 
 startClock();
 initDates();
+
+// ── Sync HeatSeeker height to match the combined left-column height ──
+// CSS Grid can't constrain a multi-row-spanning item's height based on other
+// items, so we measure the left column directly and apply that height.
+// This keeps the HeatSeeker exactly as tall as SVP + Net Flow combined,
+// with internal scrolling for matrix rows that don't fit.
+function syncHeatseekerHeight() {
+  // Skip on mobile/narrow screens — grid collapses to single column there
+  if (window.innerWidth <= 1000) return;
+  const svp = document.querySelector('.svp-section');
+  const netflow = document.querySelector('.net-flow-section');
+  const hsSection = document.querySelector('.heatseeker-section');
+  const hsWrap = hsSection ? hsSection.querySelector('.hs-wrap') : null;
+  if (!svp || !netflow || !hsSection || !hsWrap) return;
+  const GAP = 16;     // matches .content-grid gap
+  const INNER = 10;   // matches .chart-half internal gap
+  const leftTotal = svp.offsetHeight + GAP + netflow.offsetHeight;
+  const title = hsSection.querySelector('.svp-title');
+  const titleH = title ? title.offsetHeight : 0;
+  const target = Math.max(300, leftTotal - titleH - INNER);
+  hsWrap.style.height = target + 'px';
+}
+
+// Run after initial layout, on resize, and when left-column content reflows
+window.addEventListener('load', () => setTimeout(syncHeatseekerHeight, 100));
+window.addEventListener('resize', syncHeatseekerHeight);
+if (window.ResizeObserver) {
+  const _ro = new ResizeObserver(syncHeatseekerHeight);
+  setTimeout(() => {
+    const svpEl = document.querySelector('.svp-section');
+    const nfEl  = document.querySelector('.net-flow-section');
+    if (svpEl) _ro.observe(svpEl);
+    if (nfEl)  _ro.observe(nfEl);
+  }, 200);
+}
 
 // ── Register service worker (enables install-as-app + offline shell) ──
 if ('serviceWorker' in navigator) {
