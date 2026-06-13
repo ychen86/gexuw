@@ -83,17 +83,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 /* ── Voltick pattern markers — overlaid on cells without changing heat colors ── */
 /* All cell variants set position:relative so ::before/::after icons can anchor inside. */
-.hs-table td.is-volt,.hs-table td.is-reversal,.hs-table td.is-coil,.hs-table td.is-air{position:relative;}
+.hs-table td.is-king,.hs-table td.is-reversal,.hs-table td.is-coil,.hs-table td.is-air{position:relative;}
 
-/* VOLT ★ — single highest-magnitude strike per column. Red star top-right, red outline (matches the original King Node). */
-.hs-table td.is-volt{outline:2px solid var(--red);outline-offset:-2px;}
-.hs-table td.is-volt::after{content:'★';position:absolute;top:1px;right:3px;font-size:11px;color:var(--red);text-shadow:0 0 3px rgba(0,0,0,0.9);line-height:1;font-weight:700;}
+/* KING ★ — single highest-magnitude strike per column. Red star top-right, red outline (matches the original King Node). */
+.hs-table td.is-king{outline:2px solid var(--red);outline-offset:-2px;}
+.hs-table td.is-king::after{content:'★';position:absolute;top:1px;right:3px;font-size:11px;color:var(--red);text-shadow:0 0 3px rgba(0,0,0,0.9);line-height:1;font-weight:700;}
 
-/* REVERSAL ↘ — biggest opposite-sign strike. Dark purple inset border. */
-.hs-table td.is-reversal{box-shadow:inset 0 0 0 2px #4b038a;}
-.hs-table td.is-reversal::after{content:'↘';position:absolute;top:1px;right:3px;font-size:10px;color:#4b038a;text-shadow:0 0 3px rgba(255,255,255,0.5);line-height:1;font-weight:700;}
+/* REVERSAL ↘ — biggest opposite-sign strike. Light pink inset border. */
+.hs-table td.is-reversal{box-shadow:inset 0 0 0 2px #ffabf9;}
+.hs-table td.is-reversal::after{content:'↘';position:absolute;top:1px;right:3px;font-size:10px;color:#ffabf9;text-shadow:0 0 3px rgba(0,0,0,0.9);line-height:1;font-weight:700;}
 
-/* COIL ◆ — strikes with ≥50% of Volt weight. Dark blue diamond, left-side ring accent. */
+/* COIL ◆ — strikes with ≥50% of King weight. Dark blue diamond, left-side ring accent. */
 .hs-table td.is-coil{border-left:3px solid #1d4ed8 !important;}
 .hs-table td.is-coil::after{content:'◆';position:absolute;top:1px;right:3px;font-size:8px;color:#1d4ed8;text-shadow:0 0 3px rgba(255,255,255,0.4);line-height:1;}
 
@@ -325,6 +325,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .econ-cal-attribution{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right;padding:0 4px;margin-bottom:12px;letter-spacing:0.3px;}
 .econ-cal-attribution a{color:var(--text2);text-decoration:none;}
 .econ-cal-attribution a:hover{color:var(--amber);}
+
+/* ── GAMMA KEY — legend explaining HeatSeeker pattern markers ── */
+.gamma-key{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:12px;}
+.gamma-key-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.gk-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.gk-row:last-child{border-bottom:none;}
+.gk-swatch{flex-shrink:0;width:32px;height:24px;background:#181818;border-radius:3px;display:flex;align-items:center;justify-content:center;position:relative;font-family:var(--mono);font-size:11px;font-weight:700;}
+/* Swatch styling matches the matrix cell markers exactly */
+.gk-swatch.gk-king{outline:2px solid var(--red);outline-offset:-2px;color:var(--red);}
+.gk-swatch.gk-king::after{content:'★';position:absolute;top:1px;right:3px;font-size:9px;color:var(--red);}
+.gk-swatch.gk-reversal{box-shadow:inset 0 0 0 2px #ffabf9;color:#ffabf9;}
+.gk-swatch.gk-reversal::after{content:'↘';position:absolute;top:1px;right:3px;font-size:9px;color:#ffabf9;}
+.gk-swatch.gk-coil{border-left:3px solid #1d4ed8;color:#6b8eff;}
+.gk-swatch.gk-coil::after{content:'◆';position:absolute;top:1px;right:3px;font-size:7px;color:#6b8eff;}
+.gk-swatch.gk-air{opacity:0.55;color:#aaa;}
+.gk-swatch.gk-air::after{content:'≈';position:absolute;top:1px;right:3px;font-size:9px;color:#aaa;}
+.gk-text{flex:1;min-width:0;}
+.gk-name{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;letter-spacing:0.3px;}
+.gk-name.n-king{color:var(--red);}
+.gk-name.n-reversal{color:#ffabf9;}
+.gk-name.n-coil{color:#6b8eff;}
+.gk-name.n-air{color:var(--text2);}
+.gk-desc{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;}
 .pi-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
 .pi-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:14px;}
 .pi-row:last-child{border-bottom:none;}
@@ -596,7 +619,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
           <div class="svp-title">
             <span>HEATSEEKER MATRIX</span>
             <div class="hs-btn-group">
-              <button class="hs-btn patterns-active" id="btn-voltick-patterns" onclick="toggleVoltickPatterns()" title="Toggle Voltick pattern markers (Volt ★, Reversal ↘, Coil ◆, Air ≈)">★ PATTERNS</button>
+              <button class="hs-btn patterns-active" id="btn-voltick-patterns" onclick="toggleVoltickPatterns()" title="Toggle GAMMA pattern markers (King ★, Reversal ↘, Guard ◆, Gap ≈)">★ PATTERNS</button>
               <button class="hs-btn"        id="btn-heatseeker-1"  onclick="fetchHeatseekerSingle()" title="Refresh just the currently-active expiry (1 credit)">↻ REFRESH 1</button>
               <button class="hs-btn active" id="btn-heatseeker-5"  onclick="fetchHeatseeker(5)"  title="Fetch the 5 primary expirations">⚡ FETCH 5</button>
               <button class="hs-btn"        id="btn-heatseeker-10" onclick="fetchHeatseeker(10)" title="Extend the matrix to 10 expirations">⚡ FETCH 10</button>
@@ -632,6 +655,37 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
         title="US Economic Calendar — week ahead"></iframe>
     </div>
     <div class="econ-cal-attribution">Calendar provided by <a href="https://www.investing.com/" target="_blank" rel="noopener nofollow">Investing.com</a></div>
+    <div class="gamma-key">
+      <div class="gamma-key-title">▸ GAMMA KEY — HeatSeeker pattern markers</div>
+      <div class="gk-row">
+        <div class="gk-swatch gk-king"></div>
+        <div class="gk-text">
+          <div class="gk-name n-king">KING ★</div>
+          <div class="gk-desc">Biggest |GEX| strike on the board. Price's anchor — gravitates toward it, slows around it. The day's reference level.</div>
+        </div>
+      </div>
+      <div class="gk-row">
+        <div class="gk-swatch gk-reversal"></div>
+        <div class="gk-text">
+          <div class="gk-name n-reversal">REVERSAL ↘</div>
+          <div class="gk-desc">Heaviest level on the opposite side of zero from the King. Together they frame the room price moves inside.</div>
+        </div>
+      </div>
+      <div class="gk-row">
+        <div class="gk-swatch gk-coil"></div>
+        <div class="gk-text">
+          <div class="gk-name n-coil">GUARD ◆</div>
+          <div class="gk-desc">Any strike carrying ≥50% of the King's weight. Defends against price moves — usually has to be worked through before reaching the King.</div>
+        </div>
+      </div>
+      <div class="gk-row">
+        <div class="gk-swatch gk-air"></div>
+        <div class="gk-text">
+          <div class="gk-name n-air">GAP ≈</div>
+          <div class="gk-desc">3+ consecutive near-zero strikes. No hedging friction — price travels these stretches quickly in either direction.</div>
+        </div>
+      </div>
+    </div>
     <div class="entry-window">
       <div class="ew-title">ENTRY WINDOW RULES</div>
       <div class="ew-row">
@@ -704,7 +758,7 @@ function persistTrackedTickers() {
 }
 
 // ── Voltick pattern overlay toggle (default ON) ──
-// Controls whether the HeatSeeker shows Volt ★, Reversal ↘, Coil ◆, Air pocket ≈ markers.
+// Controls whether the HeatSeeker shows King ★, Reversal ↘, Coil ◆, Air pocket ≈ markers.
 // Persisted to localStorage so the user's choice survives reloads.
 let showVoltickPatterns = true;
 try {
@@ -718,7 +772,7 @@ function toggleVoltickPatterns() {
   catch(e) { /* fine */ }
   const btn = document.getElementById('btn-voltick-patterns');
   if (btn) btn.classList.toggle('patterns-active', showVoltickPatterns);
-  log('Voltick patterns ' + (showVoltickPatterns ? 'ENABLED' : 'DISABLED'), 'info');
+  log('GAMMA patterns ' + (showVoltickPatterns ? 'ENABLED' : 'DISABLED'), 'info');
   renderHeatseeker();
 }
 
@@ -1412,13 +1466,13 @@ function getHeatColor(val, maxAbs) {
 // VOLTICK PATTERN DETECTION
 // ────────────────────────────────────────────
 // Detects the four Voltick concepts per-column (per expiration):
-//   Volt ★      — single strike with largest |net_gex|. The board's reference.
-//   Reversal ↘  — single strike with largest |net_gex| on the OPPOSITE sign from Volt.
-//   Coils ◆     — strikes carrying ≥ 50% of the Volt's weight (excluding Volt and Reversal).
+//   King ★      — single strike with largest |net_gex|. The board's reference.
+//   Reversal ↘  — single strike with largest |net_gex| on the OPPOSITE sign from King.
+//   Coils ◆     — strikes carrying ≥ 50% of the King's weight (excluding King and Reversal).
 //   Air pockets ≈ — runs of 3+ CONSECUTIVE strikes (in render order) with near-zero values.
 //
 // Returns a Map<strikePrice, patternName> for one column's data. patternName is one of:
-// 'volt' | 'reversal' | 'coil' | 'air' | undefined.
+// 'king' | 'reversal' | 'coil' | 'air' | undefined.
 // Each strike can only be one of these (mutually exclusive).
 function detectVoltickPatterns(data, sortedStrikes) {
   const result = new Map();
@@ -1433,40 +1487,40 @@ function detectVoltickPatterns(data, sortedStrikes) {
   });
   if (gexByStrike.size === 0) return result;
 
-  // Find Volt — biggest |gex| on the board
-  let voltStrike = null, voltAbs = 0, voltSign = 0;
+  // Find King — biggest |gex| on the board
+  let kingStrike = null, kingAbs = 0, kingSign = 0;
   for (const [strike, gex] of gexByStrike) {
-    if (Math.abs(gex) > voltAbs) {
-      voltAbs = Math.abs(gex);
-      voltStrike = strike;
-      voltSign = Math.sign(gex);
+    if (Math.abs(gex) > kingAbs) {
+      kingAbs = Math.abs(gex);
+      kingStrike = strike;
+      kingSign = Math.sign(gex);
     }
   }
 
   // Skip pattern detection for thin columns — patterns are meaningless when
   // the heaviest level is < $500K (typical for far-dated expirations).
-  if (voltAbs < 500000) return result;
+  if (kingAbs < 500000) return result;
 
-  result.set(voltStrike, 'volt');
+  result.set(kingStrike, 'king');
 
-  // Find Reversal — biggest |gex| with opposite sign to Volt
+  // Find Reversal — biggest |gex| with opposite sign to King
   let reversalStrike = null, reversalAbs = 0;
   for (const [strike, gex] of gexByStrike) {
-    if (Math.sign(gex) === -voltSign && Math.abs(gex) > reversalAbs) {
+    if (Math.sign(gex) === -kingSign && Math.abs(gex) > reversalAbs) {
       reversalAbs = Math.abs(gex);
       reversalStrike = strike;
     }
   }
-  // Only mark as Reversal if it carries meaningful weight (≥ 10% of Volt).
-  // Avoids labelling a $50K opposing strike on a $20M Volt as a Reversal.
-  if (reversalStrike != null && reversalAbs >= voltAbs * 0.1) {
+  // Only mark as Reversal if it carries meaningful weight (≥ 10% of King).
+  // Avoids labelling a $50K opposing strike on a $20M King as a Reversal.
+  if (reversalStrike != null && reversalAbs >= kingAbs * 0.1) {
     result.set(reversalStrike, 'reversal');
   }
 
-  // Find Coils — strikes with ≥ 50% of Volt's weight (excluding Volt and Reversal)
-  const coilThreshold = voltAbs * 0.5;
+  // Find Coils — strikes with ≥ 50% of King's weight (excluding King and Reversal)
+  const coilThreshold = kingAbs * 0.5;
   for (const [strike, gex] of gexByStrike) {
-    if (strike === voltStrike || strike === reversalStrike) continue;
+    if (strike === kingStrike || strike === reversalStrike) continue;
     if (Math.abs(gex) >= coilThreshold) {
       result.set(strike, 'coil');
     }
@@ -1474,8 +1528,8 @@ function detectVoltickPatterns(data, sortedStrikes) {
 
   // Find Air pockets — runs of 3+ CONSECUTIVE near-zero strikes in render order.
   // sortedStrikes is the union of all strikes in render order (high → low).
-  // A "near-zero" strike is one with |gex| < 3% of Volt OR missing entirely.
-  const airThreshold = voltAbs * 0.03;
+  // A "near-zero" strike is one with |gex| < 3% of King OR missing entirely.
+  const airThreshold = kingAbs * 0.03;
   let runStart = -1;
   for (let i = 0; i < sortedStrikes.length; i++) {
     const strike = sortedStrikes[i];
@@ -1557,7 +1611,7 @@ function renderHeatseeker() {
   }
 
   // ── Pre-compute Voltick patterns per column ──
-  // For each expiration, identify Volt/Reversal/Coil/Air strikes once,
+  // For each expiration, identify King/Reversal/Coil/Air strikes once,
   // then apply CSS classes to the right cells during render.
   // (Only computed when showVoltickPatterns is on — skip the work otherwise.)
   const patternsPerDate = new Map();
@@ -1595,7 +1649,7 @@ function renderHeatseeker() {
         }
       }
       // Look up the Voltick pattern for this cell (if any).
-      // Renders as a CSS class on the <td> — see the .is-volt/.is-reversal/.is-coil/.is-air rules.
+      // Renders as a CSS class on the <td> — see the .is-king/.is-reversal/.is-coil/.is-air rules.
       let patternClass = '';
       if (showVoltickPatterns) {
         const colPatterns = patternsPerDate.get(d);
