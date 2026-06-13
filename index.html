@@ -59,13 +59,57 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 .ldot.fetching{animation:blink .7s infinite;background:var(--amber);}
 
+/* ── TICKER CHIP BAR ── */
+.ticker-chip-bar{background:#0a0a0a;border-bottom:1px solid var(--border);padding:9px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-height:44px;}
+.ticker-chip-bar .chip-label{font-family:var(--mono);font-size:13px;color:var(--text3);letter-spacing:1.5px;margin-right:6px;text-transform:uppercase;}
+.ticker-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 10px 6px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:18px;font-family:var(--mono);font-size:15px;color:var(--text2);cursor:pointer;transition:all .15s;user-select:none;}
+.ticker-chip:hover{border-color:var(--amber);}
+.ticker-chip.active{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);font-weight:700;}
+.ticker-chip .chip-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
+.ticker-chip .chip-dot.fresh{background:var(--green);}
+.ticker-chip .chip-dot.aging{background:var(--amber);}
+.ticker-chip .chip-dot.stale{background:var(--red);}
+.ticker-chip .chip-name{letter-spacing:1px;}
+.ticker-chip .chip-age{font-size:12px;color:var(--text3);}
+.ticker-chip.active .chip-age{color:var(--amber);opacity:.7;}
+.ticker-chip .chip-close{margin-left:3px;font-size:16px;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:3px;line-height:1;}
+.ticker-chip .chip-close:hover{color:var(--red);background:rgba(255,51,51,0.12);}
+.ticker-chip-bar .chip-empty{font-family:var(--mono);font-size:14px;color:var(--text3);font-style:italic;}
+
+/* delta indicator in HeatSeeker cells */
+.hs-delta{display:block;font-size:9px;font-weight:600;margin-top:2px;opacity:0.95;letter-spacing:0.3px;}
+.hs-delta.up{color:#00ff88;}
+.hs-delta.down{color:#ff5252;}
+
+/* ── Voltick pattern markers — overlaid on cells without changing heat colors ── */
+/* All cell variants set position:relative so ::before/::after icons can anchor inside. */
+.hs-table td.is-volt,.hs-table td.is-reversal,.hs-table td.is-coil,.hs-table td.is-air{position:relative;}
+
+/* VOLT ★ — single highest-magnitude strike per column. Red star top-right, red outline (matches the original King Node). */
+.hs-table td.is-volt{outline:2px solid var(--red);outline-offset:-2px;}
+.hs-table td.is-volt::after{content:'★';position:absolute;top:1px;right:3px;font-size:11px;color:var(--red);text-shadow:0 0 3px rgba(0,0,0,0.9);line-height:1;font-weight:700;}
+
+/* REVERSAL ↘ — biggest opposite-sign strike. Dark purple inset border. */
+.hs-table td.is-reversal{box-shadow:inset 0 0 0 2px #4b038a;}
+.hs-table td.is-reversal::after{content:'↘';position:absolute;top:1px;right:3px;font-size:10px;color:#4b038a;text-shadow:0 0 3px rgba(255,255,255,0.5);line-height:1;font-weight:700;}
+
+/* COIL ◆ — strikes with ≥50% of Volt weight. Dark blue diamond, left-side ring accent. */
+.hs-table td.is-coil{border-left:3px solid #1d4ed8 !important;}
+.hs-table td.is-coil::after{content:'◆';position:absolute;top:1px;right:3px;font-size:8px;color:#1d4ed8;text-shadow:0 0 3px rgba(255,255,255,0.4);line-height:1;}
+
+/* AIR POCKET ≈ — 3+ consecutive near-zero strikes. Dimmed cell + tilde symbol. */
+.hs-table td.is-air{opacity:0.55;}
+.hs-table td.is-air::after{content:'≈';position:absolute;top:1px;right:3px;font-size:11px;color:#aaa;line-height:1;font-weight:700;}
+
+/* Pattern toggle button styling — separate visual state from Fetch buttons */
+.hs-btn.patterns-active{background:rgba(255,51,51,0.12);border-color:var(--red);color:var(--red);}
+
 /* ── HERO HEADER ── */
 .hero{background:var(--bg2);border-bottom:2px solid var(--border2);padding:16px 20px;display:grid;grid-template-columns:auto 1fr repeat(3,auto);align-items:center;gap:20px;}
 @media(max-width:700px){.hero{grid-template-columns:1fr 1fr;}}
 .hero-ticker{display:flex;align-items:baseline;gap:12px;}
 .hero-sym{font-family:var(--bebas);font-size:56px;line-height:1;color:var(--red);letter-spacing:1px;}
 .whale-logo{width:54px;height:27px;color:var(--amber);align-self:center;filter:drop-shadow(0 0 8px rgba(46,182,200,0.4));}
-.uw-tag{display:inline-block;font-family:var(--mono);font-size:10px;background:var(--amber-dim);color:var(--amber);padding:2px 8px;border-radius:3px;margin-left:8px;letter-spacing:1px;font-weight:700;vertical-align:middle;}
 .hero-change{background:var(--green);color:#000;font-family:var(--mono);font-size:14px;font-weight:700;padding:4px 10px;border-radius:3px;}
 .hero-change.neg{background:var(--red);color:#fff;}
 .hero-name{font-family:var(--mono);font-size:14px;color:var(--text2);letter-spacing:1px;}
@@ -220,8 +264,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 /* NET FLOW chart section */
 .net-flow-section{margin-top:16px;}
-.net-flow-wrap{position:relative;width:100%;height:280px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:8px;}
+.net-flow-wrap{position:relative;width:100%;height:280px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:8px;display:flex;flex-direction:column;}
 .net-flow-wrap canvas{width:100%!important;}
+.nf-premium-wrap{position:relative;width:100%;flex:3;min-height:0;}
+.nf-volume-wrap{position:relative;width:100%;flex:1;min-height:0;border-top:1px solid var(--border);margin-top:4px;padding-top:2px;}
 
 /* NET FLOW aggregate stats strip */
 .nf-stats-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
@@ -250,6 +296,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .nf-sent-bar-wrap{flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex;background:var(--bg4);min-width:120px;}
 .nf-sent-bar-bear{background:var(--red);height:100%;transition:width .4s ease;}
 .nf-sent-bar-bull{background:var(--green);height:100%;transition:width .4s ease;}
+.nf-sent-bar-bear.low-conviction,.nf-sent-bar-bull.low-conviction{background:var(--text3);opacity:0.5;}
 .nf-sent-pct{font-size:11px;flex-shrink:0;}
 .nf-sent-pct .bear{color:var(--red);font-weight:700;}
 .nf-sent-pct .bull{color:var(--green);font-weight:700;}
@@ -271,6 +318,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 /* pro insight */
 .pro-insight{background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin:0 18px 16px 18px;padding:14px 16px;}
+
+/* ── US ECONOMIC CALENDAR (Investing.com iframe embed) ── */
+.econ-cal-wrap{background:#fff;border:1px solid var(--border);border-radius:6px;overflow:hidden;height:520px;margin-bottom:6px;}
+.econ-cal-wrap iframe{display:block;width:100%;height:100%;border:0;}
+.econ-cal-attribution{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right;padding:0 4px;margin-bottom:12px;letter-spacing:0.3px;}
+.econ-cal-attribution a{color:var(--text2);text-decoration:none;}
+.econ-cal-attribution a:hover{color:var(--amber);}
 .pi-title{font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
 .pi-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:14px;}
 .pi-row:last-child{border-bottom:none;}
@@ -401,6 +455,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <div class="live-pill"><div class="ldot" id="live-dot"></div><span id="live-txt">OFFLINE</span></div>
 </div>
 
+<div class="ticker-chip-bar" id="ticker-chip-bar">
+  <span class="chip-label">▸ TRACKED</span>
+  <span class="chip-empty" id="chip-empty">No tickers yet — type a symbol above and click ▶ START</span>
+</div>
+
 <div class="hero">
   <div class="hero-ticker">
     <!-- Whale logo (UW branding) -->
@@ -412,7 +471,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="hero-change" id="h-change">—</div>
   </div>
   <div>
-    <div class="hero-name" id="h-name">— <span class="uw-tag">🐋 UW</span></div>
+    <div class="hero-name" id="h-name">—</div>
     <div class="hero-name"><small id="h-sub">GEX READ + TRADE PLAN — WEEKLY <span id="h-week-label">MAY 11, 2026</span></small></div>
   </div>
   <div class="hero-stat">
@@ -524,7 +583,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
           </div>
 
           <div class="net-flow-wrap">
-            <canvas id="net-flow-chart" role="img" aria-label="Net premium flow line chart"></canvas>
+            <div class="nf-premium-wrap">
+              <canvas id="net-flow-chart" role="img" aria-label="Net premium flow line chart"></canvas>
+            </div>
+            <div class="nf-volume-wrap">
+              <canvas id="net-flow-volume" role="img" aria-label="Cumulative option volume area chart"></canvas>
+            </div>
           </div>
         </div>
 
@@ -532,6 +596,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
           <div class="svp-title">
             <span>HEATSEEKER MATRIX</span>
             <div class="hs-btn-group">
+              <button class="hs-btn patterns-active" id="btn-voltick-patterns" onclick="toggleVoltickPatterns()" title="Toggle Voltick pattern markers (Volt ★, Reversal ↘, Coil ◆, Air ≈)">★ PATTERNS</button>
+              <button class="hs-btn"        id="btn-heatseeker-1"  onclick="fetchHeatseekerSingle()" title="Refresh just the currently-active expiry (1 credit)">↻ REFRESH 1</button>
               <button class="hs-btn active" id="btn-heatseeker-5"  onclick="fetchHeatseeker(5)"  title="Fetch the 5 primary expirations">⚡ FETCH 5</button>
               <button class="hs-btn"        id="btn-heatseeker-10" onclick="fetchHeatseeker(10)" title="Extend the matrix to 10 expirations">⚡ FETCH 10</button>
             </div>
@@ -553,17 +619,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   </div>
 
   <div class="col-right">
-    <div class="ts-hdr">▸ PRO INSIGHT</div>
-    <div class="pro-insight">
-      <div class="pi-title">PRO INSIGHT — <span id="pi-ticker-lbl">TICKER</span> READ</div>
-      <div class="pi-row"><span class="pi-key">Price closed Friday</span><span class="pi-val amber" id="pi-close">—</span></div>
-      <div class="pi-row"><span class="pi-key">Magnet / Pin</span><span class="pi-val amber" id="pi-magnet">—</span></div>
-      <div class="pi-row"><span class="pi-key">Call Wall — never chase</span><span class="pi-val red" id="pi-cwall">— = EXIT ONLY</span></div>
-      <div class="pi-row"><span class="pi-key">Put Wall — massive floor</span><span class="pi-val green" id="pi-pwall">— = BUY CALLS</span></div>
-      <div class="pi-row"><span class="pi-key">Trap Door</span><span class="pi-val amber" id="pi-trap">—</span></div>
-      <div class="pi-row"><span class="pi-key">Neg GEX Zone</span><span class="pi-val red" id="pi-negzone">—</span></div>
-      <div class="pi-row"><span class="pi-key">Monday bias</span><span class="pi-val yellow" id="pi-bias">Waiting for data...</span></div>
+    <div class="ts-hdr">▸ US ECONOMIC CALENDAR</div>
+    <div class="econ-cal-wrap">
+      <iframe
+        id="econ-calendar-frame"
+        src="https://sslecal2.investing.com?columns=exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&category=_employment,_economicActivity,_inflation,_credit,_centralBanks,_confidenceIndex,_balance,_Bonds&importance=2,3&features=datepicker,timezone&countries=5&calType=week&timeZone=8&lang=1"
+        width="100%"
+        height="100%"
+        frameborder="0"
+        allowtransparency="true"
+        scrolling="auto"
+        title="US Economic Calendar — week ahead"></iframe>
     </div>
+    <div class="econ-cal-attribution">Calendar provided by <a href="https://www.investing.com/" target="_blank" rel="noopener nofollow">Investing.com</a></div>
     <div class="entry-window">
       <div class="ew-title">ENTRY WINDOW RULES</div>
       <div class="ew-row">
@@ -610,6 +678,49 @@ let gexChart = null, timer = null, countdown = null, countdownSec = 0;
 let prevData = {}, dayCache = {}, currentExpiry = '', currentDayId = '';
 let activeExpiries = [];
 let heatseekerDates = [];  // Extended HeatSeeker matrix expirations (5 or 10, set by Fetch buttons)
+
+// Multi-ticker tracking:
+//   trackedTickers   = ordered list of tickers the user has loaded this session
+//   currentTicker    = which ticker's data is currently displayed
+//   tickerLastFetch  = ms timestamp of last successful fetch per ticker (drives "3m ago" age on chips)
+//   chipAgeTimer     = interval handle that re-renders chip ages every 30s
+// dayCache and spotPriceCache are ALREADY keyed by ticker (e.g. dayCache['MU2026-06-12']),
+// so switching tickers no longer wipes — only ticker-specific UI state gets rebuilt.
+let trackedTickers = [];
+let currentTicker = '';
+let tickerLastFetch = {};
+let chipAgeTimer = null;
+
+// Restore tracked list from localStorage on init (so chips survive page reload).
+// Cache itself is in-memory only — reload triggers re-fetch when the user clicks a chip.
+try {
+  const saved = localStorage.getItem('uw_tracked_tickers');
+  if (saved) trackedTickers = JSON.parse(saved).filter(t => typeof t === 'string' && t.length > 0 && t.length <= 6);
+} catch(e) { trackedTickers = []; }
+
+function persistTrackedTickers() {
+  try { localStorage.setItem('uw_tracked_tickers', JSON.stringify(trackedTickers)); }
+  catch(e) { /* storage unavailable, fine */ }
+}
+
+// ── Voltick pattern overlay toggle (default ON) ──
+// Controls whether the HeatSeeker shows Volt ★, Reversal ↘, Coil ◆, Air pocket ≈ markers.
+// Persisted to localStorage so the user's choice survives reloads.
+let showVoltickPatterns = true;
+try {
+  const saved = localStorage.getItem('uw_voltick_patterns');
+  if (saved === '0') showVoltickPatterns = false;
+} catch(e) { /* fine */ }
+
+function toggleVoltickPatterns() {
+  showVoltickPatterns = !showVoltickPatterns;
+  try { localStorage.setItem('uw_voltick_patterns', showVoltickPatterns ? '1' : '0'); }
+  catch(e) { /* fine */ }
+  const btn = document.getElementById('btn-voltick-patterns');
+  if (btn) btn.classList.toggle('patterns-active', showVoltickPatterns);
+  log('Voltick patterns ' + (showVoltickPatterns ? 'ENABLED' : 'DISABLED'), 'info');
+  renderHeatseeker();
+}
 
 // ────────────────────────────────────────────
 // UTILS
@@ -839,6 +950,157 @@ function log(msg, type='') {
   p.textContent = new Date().toLocaleTimeString() + '  ' + msg;
   b.insertBefore(p, b.firstChild);
   while(b.children.length > 50) b.removeChild(b.lastChild);
+}
+
+// ────────────────────────────────────────────
+// MULTI-TICKER CHIP BAR
+// ────────────────────────────────────────────
+// Each chip = one tracked ticker. Click to switch (cached data renders instantly),
+// click × to remove the chip and discard its cached data. The "age" pill on each
+// chip shows minutes since the last fetch — color-coded fresh / aging / stale.
+
+// Format the chip's age suffix from the lastFetchAt timestamp.
+function chipAgeLabel(ts) {
+  if (!ts) return { label: 'new', cls: '' };
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1)   return { label: 'now', cls: 'fresh' };
+  if (mins < 5)   return { label: mins + 'm',  cls: 'fresh' };
+  if (mins < 15)  return { label: mins + 'm',  cls: 'aging' };
+  if (mins < 60)  return { label: mins + 'm',  cls: 'stale' };
+  return { label: Math.floor(mins/60) + 'h', cls: 'stale' };
+}
+
+function renderTickerChips() {
+  const bar = document.getElementById('ticker-chip-bar');
+  if (!bar) return;
+  // Strip out existing chips/empty msg, keep the label
+  [...bar.querySelectorAll('.ticker-chip, .chip-empty')].forEach(el => el.remove());
+  const empty = trackedTickers.length === 0;
+  if (empty) {
+    const e = document.createElement('span');
+    e.className = 'chip-empty';
+    e.id = 'chip-empty';
+    e.textContent = 'No tickers yet — type a symbol above and click ▶ START';
+    bar.appendChild(e);
+    return;
+  }
+  trackedTickers.forEach(t => {
+    const isActive = t === currentTicker;
+    const age = chipAgeLabel(tickerLastFetch[t]);
+    const chip = document.createElement('div');
+    chip.className = 'ticker-chip' + (isActive ? ' active' : '');
+    chip.title = isActive ? 'Currently viewing ' + t : 'Switch to ' + t;
+    chip.innerHTML =
+      '<span class="chip-dot ' + age.cls + '"></span>' +
+      '<span class="chip-name">' + t + '</span>' +
+      '<span class="chip-age">' + age.label + '</span>' +
+      '<span class="chip-close" title="Remove ' + t + '">×</span>';
+    // Click on chip body → switch ticker; click on × → remove
+    chip.addEventListener('click', (ev) => {
+      if (ev.target.classList.contains('chip-close')) {
+        ev.stopPropagation();
+        removeTickerChip(t);
+      } else {
+        switchToTicker(t);
+      }
+    });
+    bar.appendChild(chip);
+  });
+}
+
+// Re-render chips every 30s so the "Xm" age stays accurate without spamming reflow.
+function startChipAgeTimer() {
+  if (chipAgeTimer) return;
+  chipAgeTimer = setInterval(renderTickerChips, 30000);
+}
+
+// Add ticker to tracked list (no-op if already present) and persist.
+function addTrackedTicker(ticker) {
+  if (!ticker) return;
+  ticker = ticker.toUpperCase();
+  if (!trackedTickers.includes(ticker)) {
+    trackedTickers.push(ticker);
+    persistTrackedTickers();
+  }
+}
+
+// Remove a ticker from the chip bar AND wipe its cached data.
+// If it was the active ticker, fall back to the first remaining (or empty state).
+function removeTickerChip(ticker) {
+  trackedTickers = trackedTickers.filter(t => t !== ticker);
+  persistTrackedTickers();
+  // Wipe just this ticker's cache entries
+  Object.keys(dayCache).forEach(k => { if (k.startsWith(ticker)) delete dayCache[k]; });
+  delete tickerLastFetch[ticker];
+  // (spotPriceCache stays — cheap, harmless to keep)
+  log('Removed ' + ticker + ' from tracked list', 'info');
+  if (currentTicker === ticker) {
+    if (trackedTickers.length > 0) {
+      switchToTicker(trackedTickers[0]);
+    } else {
+      currentTicker = '';
+      stopDash();
+      renderTickerChips();
+    }
+  } else {
+    renderTickerChips();
+  }
+}
+
+// Switch the dashboard view to a different already-tracked ticker.
+// Uses cached data when available (no API calls), otherwise triggers fetchAll().
+async function switchToTicker(ticker) {
+  if (!ticker || ticker === currentTicker) return;
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) { log('Enter API key before switching tickers.', 'err'); return; }
+  log('Switching to ' + ticker, 'info');
+  currentTicker = ticker;
+  // Update ticker input box so user sees what's active
+  const ti = document.getElementById('ticker-input');
+  if (ti) ti.value = ticker;
+  // Clear chart instances (they're rebuilt by updateUI / fetchAll)
+  if (gexChart) { gexChart.destroy(); gexChart = null; }
+  // Regenerate expirations for this ticker (different class = different days)
+  const tickerDates = generateExpirations(ticker);
+  if (tickerDates.length > 0) rebuildExpiryUI(tickerDates);
+  setEl('h-sym', ticker);
+  const hNameEl = document.getElementById('h-name');
+  if (hNameEl) hNameEl.textContent = getCompanyName(ticker);
+  // If we have cached data for the active expiry, render it instantly; otherwise fetch.
+  const cachedActive = dayCache[ticker + currentExpiry];
+  if (cachedActive && cachedActive.strikes && cachedActive.strikes.length > 0 && !cachedActive.empty) {
+    updateUI(cachedActive, currentExpiry);
+    renderHeatseeker();
+    log('✓ ' + ticker + ' GEX/HeatSeeker loaded from cache (no API calls).', 'ok');
+    setEl('live-txt', ticker + ' LIVE');
+    const dot = document.getElementById('live-dot');
+    if (dot) dot.className = 'ldot live';
+  } else {
+    // No cached data — pull fresh from UW (fetchAll also handles Net Flow + Heavy Flow)
+    await fetchAll();
+    renderTickerChips();
+    return;
+  }
+  // Net Flow chart, Net Flow stats, and Heavy Flow card aren't cached per ticker —
+  // they show live intraday data and must be re-fetched on every switch.
+  // Cost: 3 API calls (vs ~10+ if we re-fetched the GEX data too).
+  log('Refreshing Net Flow + Heavy Flow for ' + ticker + ' (3 credits)', 'info');
+  updateHeavyFlowCard(ticker, key);
+  updateNetFlowChart(ticker, key);
+  updateNetFlowStats(ticker, key);
+  renderTickerChips();
+}
+
+// Format a delta value compactly for the HeatSeeker matrix.
+// Uses ▲ / ▼ arrow with absolute-value compact number (no sign char, color handles direction).
+function formatDelta(d) {
+  const a = Math.abs(d);
+  let v;
+  if (a >= 1e9) v = (a/1e9).toFixed(1) + 'B';
+  else if (a >= 1e6) v = (a/1e6).toFixed(1) + 'M';
+  else if (a >= 1e3) v = (a/1e3).toFixed(1) + 'K';
+  else v = a.toFixed(0);
+  return (d > 0 ? '▲' : '▼') + v;
 }
 
 // ────────────────────────────────────────────
@@ -1146,6 +1408,105 @@ function getHeatColor(val, maxAbs) {
   }
 }
 
+// ────────────────────────────────────────────
+// VOLTICK PATTERN DETECTION
+// ────────────────────────────────────────────
+// Detects the four Voltick concepts per-column (per expiration):
+//   Volt ★      — single strike with largest |net_gex|. The board's reference.
+//   Reversal ↘  — single strike with largest |net_gex| on the OPPOSITE sign from Volt.
+//   Coils ◆     — strikes carrying ≥ 50% of the Volt's weight (excluding Volt and Reversal).
+//   Air pockets ≈ — runs of 3+ CONSECUTIVE strikes (in render order) with near-zero values.
+//
+// Returns a Map<strikePrice, patternName> for one column's data. patternName is one of:
+// 'volt' | 'reversal' | 'coil' | 'air' | undefined.
+// Each strike can only be one of these (mutually exclusive).
+function detectVoltickPatterns(data, sortedStrikes) {
+  const result = new Map();
+  if (!data || !data.strikes || data.strikes.length === 0) return result;
+
+  // Build a quick lookup of strike → net_gex
+  const gexByStrike = new Map();
+  data.strikes.forEach(s => {
+    if (s.net_gex != null && Number.isFinite(s.net_gex)) {
+      gexByStrike.set(s.strike, s.net_gex);
+    }
+  });
+  if (gexByStrike.size === 0) return result;
+
+  // Find Volt — biggest |gex| on the board
+  let voltStrike = null, voltAbs = 0, voltSign = 0;
+  for (const [strike, gex] of gexByStrike) {
+    if (Math.abs(gex) > voltAbs) {
+      voltAbs = Math.abs(gex);
+      voltStrike = strike;
+      voltSign = Math.sign(gex);
+    }
+  }
+
+  // Skip pattern detection for thin columns — patterns are meaningless when
+  // the heaviest level is < $500K (typical for far-dated expirations).
+  if (voltAbs < 500000) return result;
+
+  result.set(voltStrike, 'volt');
+
+  // Find Reversal — biggest |gex| with opposite sign to Volt
+  let reversalStrike = null, reversalAbs = 0;
+  for (const [strike, gex] of gexByStrike) {
+    if (Math.sign(gex) === -voltSign && Math.abs(gex) > reversalAbs) {
+      reversalAbs = Math.abs(gex);
+      reversalStrike = strike;
+    }
+  }
+  // Only mark as Reversal if it carries meaningful weight (≥ 10% of Volt).
+  // Avoids labelling a $50K opposing strike on a $20M Volt as a Reversal.
+  if (reversalStrike != null && reversalAbs >= voltAbs * 0.1) {
+    result.set(reversalStrike, 'reversal');
+  }
+
+  // Find Coils — strikes with ≥ 50% of Volt's weight (excluding Volt and Reversal)
+  const coilThreshold = voltAbs * 0.5;
+  for (const [strike, gex] of gexByStrike) {
+    if (strike === voltStrike || strike === reversalStrike) continue;
+    if (Math.abs(gex) >= coilThreshold) {
+      result.set(strike, 'coil');
+    }
+  }
+
+  // Find Air pockets — runs of 3+ CONSECUTIVE near-zero strikes in render order.
+  // sortedStrikes is the union of all strikes in render order (high → low).
+  // A "near-zero" strike is one with |gex| < 3% of Volt OR missing entirely.
+  const airThreshold = voltAbs * 0.03;
+  let runStart = -1;
+  for (let i = 0; i < sortedStrikes.length; i++) {
+    const strike = sortedStrikes[i];
+    const gex = gexByStrike.get(strike);
+    // Strike counts as near-zero if absent, or below the air threshold,
+    // AND it isn't already marked as one of the special levels.
+    const alreadyMarked = result.has(strike);
+    const isNearZero = !alreadyMarked && (gex == null || Math.abs(gex) < airThreshold);
+
+    if (isNearZero) {
+      if (runStart === -1) runStart = i;
+    } else {
+      // End of run — promote to air pockets if 3+ consecutive
+      if (runStart !== -1 && (i - runStart) >= 3) {
+        for (let j = runStart; j < i; j++) {
+          result.set(sortedStrikes[j], 'air');
+        }
+      }
+      runStart = -1;
+    }
+  }
+  // Handle a run that extends to the end of the strike list
+  if (runStart !== -1 && (sortedStrikes.length - runStart) >= 3) {
+    for (let j = runStart; j < sortedStrikes.length; j++) {
+      result.set(sortedStrikes[j], 'air');
+    }
+  }
+
+  return result;
+}
+
 function renderHeatseeker() {
   const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
   // Use extended HeatSeeker dates if a Fetch button has been clicked,
@@ -1195,6 +1556,18 @@ function renderHeatseeker() {
     });
   }
 
+  // ── Pre-compute Voltick patterns per column ──
+  // For each expiration, identify Volt/Reversal/Coil/Air strikes once,
+  // then apply CSS classes to the right cells during render.
+  // (Only computed when showVoltickPatterns is on — skip the work otherwise.)
+  const patternsPerDate = new Map();
+  if (showVoltickPatterns) {
+    dates.forEach(d => {
+      const data = dayCache[ticker + d];
+      patternsPerDate.set(d, detectVoltickPatterns(data, sortedStrikes));
+    });
+  }
+
   let bodyHtml = '';
   sortedStrikes.forEach(strike => {
     const strikeLabel = (strike === atmStrike)
@@ -1204,15 +1577,40 @@ function renderHeatseeker() {
     dates.forEach(d => {
       const data = dayCache[ticker+d];
       let val = null;
+      let delta = null;
       if (data && data.strikes) {
         const sObj = data.strikes.find(x => x.strike === strike);
         if (sObj) val = sObj.net_gex;
+        // Compute delta vs prevStrikes (only if both current and prev exist)
+        if (val !== null && data.prevStrikes && data.prevStrikes.length > 0) {
+          const prevObj = data.prevStrikes.find(x => x.strike === strike);
+          if (prevObj && prevObj.net_gex != null) {
+            const d = val - prevObj.net_gex;
+            // Only show meaningful deltas — hide noise < 1% of current value
+            // (Also requires current value is non-zero to avoid divide-by-zero)
+            if (Math.abs(val) > 0 && Math.abs(d) / Math.abs(val) >= 0.01) {
+              delta = d;
+            }
+          }
+        }
+      }
+      // Look up the Voltick pattern for this cell (if any).
+      // Renders as a CSS class on the <td> — see the .is-volt/.is-reversal/.is-coil/.is-air rules.
+      let patternClass = '';
+      if (showVoltickPatterns) {
+        const colPatterns = patternsPerDate.get(d);
+        const pat = colPatterns?.get(strike);
+        if (pat) patternClass = ' is-' + pat;
       }
       if (val !== null) {
         const bg = getHeatColor(val, maxAbsVal);
-        bodyHtml += `<td style="background:${bg}; color:${Math.abs(val)/maxAbsVal > 0.6 ? '#fff' : 'var(--text)'}">${fnumK(val)}</td>`;
+        const textColor = Math.abs(val)/maxAbsVal > 0.6 ? '#fff' : 'var(--text)';
+        const deltaHtml = (delta !== null)
+          ? `<span class="hs-delta ${delta > 0 ? 'up' : 'down'}">${formatDelta(delta)}</span>`
+          : '';
+        bodyHtml += `<td class="cell-val${patternClass}" style="background:${bg}; color:${textColor}">${fnumK(val)}${deltaHtml}</td>`;
       } else {
-        bodyHtml += `<td>$0.0K</td>`;
+        bodyHtml += `<td class="cell-empty${patternClass}">$0.0K</td>`;
       }
     });
     bodyHtml += `</tr>`;
@@ -1625,20 +2023,32 @@ function renderNetFlowStats(s) {
   const NPP = (s.directNPP !== undefined && s.directNPP !== 0) ? s.directNPP : (putBought  - putSold);
   const NET = NCP - NPP;
 
-  // Sentiment from the 4 primitives (now always present after derivation)
-  const bullish = callBought + putSold;     // ask-side calls + bid-side puts
-  const bearish = callSold   + putBought;   // bid-side calls + ask-side puts
-  const total = bullish + bearish;
-  let bullPct = total > 0 ? (bullish / total) * 100 : 50;
-  let bearPct = 100 - bullPct;
-
-  // If we STILL don't have breakdown (no fallback values either), use sign-based approximation
-  if (callBought + callSold === 0 && putBought + putSold === 0) {
-    const bullStrength = Math.max(0, NCP) + Math.max(0, -NPP);
-    const bearStrength = Math.max(0, -NCP) + Math.max(0, NPP);
-    const t = bullStrength + bearStrength;
-    bullPct = t > 0 ? (bullStrength / t) * 100 : 50;
+  // Sentiment — net directional pressure formula (instead of total-flow ratio).
+  // The old formula (callBought+putSold) / total naturally hovered near 50% because
+  // total premium is dominated by matched/balanced flow. The net formula isolates
+  // only the directional imbalance (NCP and NPP), giving much more responsive readings
+  // that match how UW/SpotGamma display sentiment.
+  //
+  //   bullStrength = net call buying      + net put selling      → bullish dollars
+  //   bearStrength = net call selling     + net put buying       → bearish dollars
+  //   bullPct      = bullStrength / (bullStrength + bearStrength)
+  //
+  // Low-conviction zone: if total directional pressure < $2M, the day is essentially
+  // balanced — show 50/50 with greyed-out bars so the user knows there's no signal.
+  const bullStrength = Math.max(0, NCP) + Math.max(0, -NPP);
+  const bearStrength = Math.max(0, -NCP) + Math.max(0, NPP);
+  const totalPressure = bullStrength + bearStrength;
+  const LOW_CONVICTION_THRESHOLD = 2e6;  // $2M
+  let bullPct, bearPct, lowConviction;
+  if (totalPressure < LOW_CONVICTION_THRESHOLD) {
+    // Essentially balanced day, no actionable directional signal
+    bullPct = 50;
+    bearPct = 50;
+    lowConviction = true;
+  } else {
+    bullPct = (bullStrength / totalPressure) * 100;
     bearPct = 100 - bullPct;
+    lowConviction = false;
   }
 
   // Format helpers
@@ -1665,13 +2075,24 @@ function renderNetFlowStats(s) {
   setVal('nf-put-bought',  (putBought  > 0) ? $M(putBought)  : '—');
   setVal('nf-put-sold',    (putSold    > 0) ? $M(putSold)    : '—');
 
-  // Sentiment bar widths
+  // Sentiment bar widths + low-conviction styling
   const bearBar = document.getElementById('nf-sent-bear-bar');
   const bullBar = document.getElementById('nf-sent-bull-bar');
-  if (bearBar) bearBar.style.width = bearPct.toFixed(1) + '%';
-  if (bullBar) bullBar.style.width = bullPct.toFixed(1) + '%';
-  setEl('nf-sent-bear-lbl', `Bearish ${bearPct.toFixed(0)}%`);
-  setEl('nf-sent-bull-lbl', `Bullish ${bullPct.toFixed(0)}%`);
+  if (bearBar) {
+    bearBar.style.width = bearPct.toFixed(1) + '%';
+    bearBar.classList.toggle('low-conviction', lowConviction);
+  }
+  if (bullBar) {
+    bullBar.style.width = bullPct.toFixed(1) + '%';
+    bullBar.classList.toggle('low-conviction', lowConviction);
+  }
+  if (lowConviction) {
+    setEl('nf-sent-bear-lbl', 'Balanced — no signal');
+    setEl('nf-sent-bull-lbl', '');
+  } else {
+    setEl('nf-sent-bear-lbl', `Bearish ${bearPct.toFixed(0)}%`);
+    setEl('nf-sent-bull-lbl', `Bullish ${bullPct.toFixed(0)}%`);
+  }
 }
 
 async function updateNetFlowChart(ticker, key) {
@@ -1705,12 +2126,28 @@ async function updateNetFlowChart(ticker, key) {
     });
 
     // Accumulate per-tick deltas into running totals from market open.
-    let cumCall = 0, cumPut = 0;
+    // Premium values are in raw dollars from UW — divide by 1e6 for chart in $M.
+    let cumCall = 0, cumPut = 0, cumVol = 0;
     const callPrem = ticks.map(t => { cumCall += parseFloat(t.net_call_premium || 0) / 1e6; return cumCall; });
     const putPrem  = ticks.map(t => { cumPut  += parseFloat(t.net_put_premium  || 0) / 1e6; return cumPut;  });
+    // Volume: UW returns net_call_volume and net_put_volume per tick. Total volume
+    // per tick = |net_call_volume| + |net_put_volume| (approximates total options activity).
+    // Fall back to a `volume` or `transactions` field if direct net volumes absent.
+    const volume = ticks.map(t => {
+      const ncv = parseFloat(t.net_call_volume || 0);
+      const npv = parseFloat(t.net_put_volume  || 0);
+      let v;
+      if (ncv || npv) {
+        v = Math.abs(ncv) + Math.abs(npv);
+      } else {
+        v = parseFloat(t.volume || t.transactions || 0);
+      }
+      cumVol += v;
+      return cumVol;
+    });
 
-    // Render chart with the 2 cumulative lines only (no arrow markers).
-    renderNetFlowChart(labels, callPrem, putPrem);
+    // Render chart with the 2 cumulative lines + volume area chart below.
+    renderNetFlowChart(labels, callPrem, putPrem, volume);
     if (statusEl) statusEl.textContent = `${ticks.length} ticks · updated ${new Date().toLocaleTimeString()}`;
   } catch (e) {
     if (statusEl) statusEl.textContent = 'error';
@@ -1908,47 +2345,109 @@ function premiumToRadius(prem) {
   return Math.min(22, Math.max(5, Math.log10(Math.max(prem, 100000) / 100000) * 4 + 5));
 }
 
-function renderNetFlowChart(labels, callPremM, putPremM, markers) {
+// Holds the volume area chart instance (separate canvas below the premium chart).
+let netFlowVolumeChart = null;
+
+function renderNetFlowChart(labels, callPremM, putPremM, volume) {
   const ctx = document.getElementById('net-flow-chart');
   if (!ctx) return;
 
-  // If chart already exists, just update its data
+  // ── PREMIUM CHART (top, ~75% height) ──
+  // Two thin lines, NO fill — matches UW's reference image style.
+  // Mkt Net Call Prem in teal/green, Mkt Net Put Prem in pink/magenta.
   if (netFlowChart) {
     netFlowChart.data.labels = labels;
     netFlowChart.data.datasets[0].data = callPremM;
     netFlowChart.data.datasets[1].data = putPremM;
     netFlowChart.update('active');
-    return;
-  }
-
-  netFlowChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: 'Cumulative Call Premium ($M)', data: callPremM, borderColor: '#00ff88', backgroundColor: 'rgba(0,255,136,0.10)', tension: 0.35, pointRadius: 0, borderWidth: 2, fill: true },
-        { label: 'Cumulative Put Premium ($M)',  data: putPremM,  borderColor: '#ff3333', backgroundColor: 'rgba(255,51,51,0.10)', tension: 0.35, pointRadius: 0, borderWidth: 2, fill: true }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      animation: { duration: 300 },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { labels: { color: '#ccc', font: { size: 11, family: 'monospace' }, usePointStyle: true } },
-        tooltip: {
-          callbacks: {
-            title: (items) => items.length ? (labels[items[0].dataIndex] || '') : '',
-            label: (c) => c.dataset.label + ': $' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : '0.00') + 'M'
+  } else {
+    netFlowChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Mkt Net Call Prem', data: callPremM, borderColor: '#00e8a0', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 1.5, fill: false },
+          { label: 'Mkt Net Put Prem',  data: putPremM,  borderColor: '#ff5da8', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 1.5, fill: false }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: '#ccc', font: { size: 11, family: 'monospace' }, usePointStyle: true, pointStyle: 'line', boxWidth: 18 } },
+          tooltip: {
+            callbacks: {
+              title: (items) => items.length ? (labels[items[0].dataIndex] || '') : '',
+              label: (c) => c.dataset.label + ': $' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : '0.00') + 'M'
+            }
+          }
+        },
+        scales: {
+          // Hide x-axis ticks on premium chart — bottom volume chart owns the time labels
+          x: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.03)' } },
+          y: {
+            position: 'right',
+            ticks: { color: '#666', font: { size: 10 }, callback: v => '$' + v.toFixed(1) + 'M' },
+            grid: { color: 'rgba(255,255,255,0.03)' },
+            title: { display: true, text: 'Daily Put / Call Premium', color: '#666', font: { size: 10 } }
           }
         }
-      },
-      scales: {
-        x: { ticks: { color: '#666', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { color: 'rgba(255,255,255,0.03)' } },
-        y: { ticks: { color: '#666', font: { size: 10 }, callback: v => '$' + v.toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.03)' }, title: { display: true, text: 'Cumulative Premium ($M, from open)', color: '#666', font: { size: 10 } } }
       }
-    }
-  });
+    });
+  }
+
+  // ── VOLUME AREA CHART (bottom, ~25% height) ──
+  // Single cumulative green filled area — daily option volume total.
+  // Shares X-axis labels with premium chart so the time alignment matches.
+  const vctx = document.getElementById('net-flow-volume');
+  if (!vctx || !Array.isArray(volume)) return;
+  if (netFlowVolumeChart) {
+    netFlowVolumeChart.data.labels = labels;
+    netFlowVolumeChart.data.datasets[0].data = volume;
+    netFlowVolumeChart.update('active');
+  } else {
+    netFlowVolumeChart = new Chart(vctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Volume', data: volume, borderColor: '#00e8a0', backgroundColor: 'rgba(0,232,160,0.45)', tension: 0.2, pointRadius: 0, borderWidth: 1, fill: true }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => items.length ? (labels[items[0].dataIndex] || '') : '',
+              label: (c) => 'Volume: ' + (c.parsed.y != null ? formatVolume(c.parsed.y) : '0')
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#666', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+          y: {
+            position: 'right',
+            ticks: { color: '#666', font: { size: 9 }, callback: v => formatVolume(v) },
+            grid: { color: 'rgba(255,255,255,0.03)' },
+            title: { display: true, text: 'Volume', color: '#666', font: { size: 9 } }
+          }
+        }
+      }
+    });
+  }
+}
+
+// Format raw volume counts as "500k" / "1.2M" — matches UW chart's Y-axis style.
+function formatVolume(v) {
+  const a = Math.abs(v);
+  if (a >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (a >= 1e3) return (v/1e3).toFixed(0) + 'k';
+  return v.toFixed(0);
 }
 
 // Try one GEX endpoint, return transformed FlashAlpha-shaped data (or null on failure/empty)
@@ -2020,6 +2519,16 @@ async function fetchExpiry(ticker, expiry, dayIdx) {
       return null;
     }
 
+    // ── Delta tracking: snapshot the previous strikes before overwriting.
+    // result.data is a fresh object (no prevStrikes yet), so attach the old
+    // strikes onto it so renderHeatseeker can compute per-cell deltas.
+    const prior = dayCache[ticker+expiry];
+    if (prior && prior.strikes && prior.strikes.length > 0 && !prior.empty) {
+      result.data.prevStrikes = prior.strikes;
+      result.data.prevFetchAt = prior.lastFetchAt || null;
+    }
+    result.data.lastFetchAt = Date.now();
+    tickerLastFetch[ticker] = result.data.lastFetchAt;
     dayCache[ticker+expiry] = result.data;
     if (dayIdx !== undefined) updateDayCardBadge(result.data, dayIdx);
     return result.data;
@@ -2065,36 +2574,12 @@ async function fetchAll() {
     setEl('last-fetch', 'Updated '+new Date().toLocaleTimeString());
     log('✓ '+ticker+' active tab updated.','ok');
     renderHeatseeker();
+    renderTickerChips();  // refresh chip age indicators
 
     // Fetch the unusual options flow for this ticker and update Heavy Flow card.
     // Now ALSO reuses the same trade data to populate chart arrows.
     // (Uses UW's /option-trades/flow-alerts — 1 API call serves two features.)
-    fetchFlowSummary(ticker, key).then(flow => {
-      const el = document.getElementById('hf-value');
-      if (!el) return;
-      if (!flow || flow.total === 0) {
-        el.textContent = 'No unusual flow detected';
-        el.className = 'hf-value';
-        return;
-      }
-      const cm = flow.callPrem / 1e6, pm = flow.putPrem / 1e6;
-      let label, cls;
-      if (flow.callPrem > flow.putPrem * 1.5) { label = 'HEAVY CALL BUYING'; cls = 'hf-value bull'; }
-      else if (flow.putPrem > flow.callPrem * 1.5) { label = 'HEAVY PUT BUYING'; cls = 'hf-value bear'; }
-      else { label = 'MIXED FLOW'; cls = 'hf-value mixed'; }
-      el.className = cls;
-      el.innerHTML = `${label} &nbsp; · &nbsp; Calls $${cm.toFixed(2)}M (${flow.callCount}) &nbsp; vs &nbsp; Puts $${pm.toFixed(2)}M (${flow.putCount})`;
-
-      // Use the same trade data to populate chart arrows (no extra API call)
-      if (flow.trades && flow.trades.length > 0) {
-        // Wait a moment for chart to be initialized, then update arrows
-        const tryUpdate = () => {
-          if (netFlowChart) updateChartArrows(flow.trades);
-          else setTimeout(tryUpdate, 200);  // retry if chart not ready yet
-        };
-        tryUpdate();
-      }
-    });
+    updateHeavyFlowCard(ticker, key);
 
     // Fetch and update the Net Flow intraday chart + breakdown stats (2 credits)
     updateNetFlowChart(ticker, key);
@@ -2103,6 +2588,76 @@ async function fetchAll() {
     dot.className = 'ldot err';
     setEl('live-txt','ERROR');
   }
+}
+
+// Heavy Flow card updater — extracted so both fetchAll and switchToTicker can reuse it.
+// Hits UW's /option-trades/flow-alerts once and updates both the Heavy Flow card text
+// and any chart arrow markers in one shot. 1 API call.
+function updateHeavyFlowCard(ticker, key) {
+  return fetchFlowSummary(ticker, key).then(flow => {
+    const el = document.getElementById('hf-value');
+    if (!el) return flow;
+    if (!flow || flow.total === 0) {
+      el.textContent = 'No unusual flow detected';
+      el.className = 'hf-value';
+      return flow;
+    }
+    const cm = flow.callPrem / 1e6, pm = flow.putPrem / 1e6;
+    let label, cls;
+    if (flow.callPrem > flow.putPrem * 1.5)      { label = 'HEAVY CALL BUYING'; cls = 'hf-value bull';  }
+    else if (flow.putPrem > flow.callPrem * 1.5) { label = 'HEAVY PUT BUYING';  cls = 'hf-value bear';  }
+    else                                          { label = 'MIXED FLOW';        cls = 'hf-value mixed'; }
+    el.className = cls;
+    el.innerHTML = `${label} &nbsp; · &nbsp; Calls $${cm.toFixed(2)}M (${flow.callCount}) &nbsp; vs &nbsp; Puts $${pm.toFixed(2)}M (${flow.putCount})`;
+
+    // Use the same trade data to populate chart arrows (no extra API call)
+    if (flow.trades && flow.trades.length > 0) {
+      const tryUpdate = () => {
+        if (netFlowChart) updateChartArrows(flow.trades);
+        else setTimeout(tryUpdate, 200);  // retry if chart not ready yet
+      };
+      tryUpdate();
+    }
+    return flow;
+  });
+}
+
+async function fetchHeatseekerSingle() {
+  // Refresh just the currently-active expiry (1 credit, vs 5 or 10 for the batch buttons).
+  // Useful when you want to monitor live changes on the one expiry you're focused on
+  // without burning credits to refresh the whole matrix. The delta indicator updates
+  // for that single column since fetchExpiry saves prevStrikes before overwriting.
+  const key    = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker-input').value.toUpperCase().trim();
+  if (!key)    { alert('Please enter API Key first.'); return; }
+  if (!ticker) { alert('Please enter a ticker first.'); return; }
+  if (!currentExpiry) { alert('No expiry selected. Click START first.'); return; }
+
+  const btn = document.getElementById('btn-heatseeker-1');
+  const origLabel = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'FETCHING...'; }
+
+  log(`Refreshing single expiry ${currentExpiry} for ${ticker} (1 credit)`, 'info');
+
+  // Pre-fetch spot so the 50-nearest-spot trim works correctly
+  await fetchUnderlyingPrice(ticker, key);
+
+  // Get the active dayIdx so the day-card badge updates too
+  const dayIdx = currentDayId ? parseInt(currentDayId.replace('day-',''), 10) : 0;
+
+  // fetchExpiry always hits the API (bypasses the cache-check in fetchHeatseeker),
+  // and automatically captures prevStrikes for the delta indicator before overwriting.
+  const data = await fetchExpiry(ticker, currentExpiry, dayIdx);
+
+  if (data && data.strikes && data.strikes.length > 0 && !data.empty) {
+    renderHeatseeker();
+    renderTickerChips();
+    log(`✓ Refreshed ${currentExpiry} — ${data.strikes.length} strikes`, 'ok');
+  } else {
+    log(`✗ ${currentExpiry}: no data returned from UW`, 'err');
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = origLabel || '↻ REFRESH 1'; }
 }
 
 async function fetchHeatseeker(count) {
@@ -2166,6 +2721,7 @@ async function fetchHeatseeker(count) {
 
   renderHeatseeker();
   refreshConfluenceAfterFetch(ticker);
+  renderTickerChips();  // chip age dot is fresher after batch fetch
   // Diagnostic: count how many expirations have real data vs are empty
   let withData = 0, empty = 0;
   heatseekerDates.forEach(d => {
@@ -2299,9 +2855,9 @@ function updateUI(data, expiry) {
 
   setEl('h-sym', ticker);
   setEl('h-price', price ? fp2(price) : '—');
-  // Update company name (with UW pill preserved) from local map — zero API cost
+  // Update company name from local map — zero API cost
   const hNameEl = document.getElementById('h-name');
-  if (hNameEl) hNameEl.innerHTML = `${getCompanyName(ticker)} <span class="uw-tag">🐋 UW</span>`;
+  if (hNameEl) hNameEl.textContent = getCompanyName(ticker);
   setEl('h-netgex', fgex(netgex));
   setEl('h-magnet', fp(eMagnet));
   const chEl = document.getElementById('h-change');
@@ -2384,16 +2940,21 @@ async function startDash() {
   const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
   if(!key){ log('Enter API key first.','err'); return; }
   if(!ticker){ log('Enter a ticker first.','err'); return; }
-  // Persist key + ticker so they auto-fill next time the app opens.
-  // Wrapped in try/catch so it degrades gracefully where storage is unavailable.
+  // Persist key + last ticker so they auto-fill next time the app opens.
   try {
     localStorage.setItem('uw_api_key', key);
     localStorage.setItem('uw_last_ticker', ticker);
   } catch(e) { /* storage unavailable — no persistence, but app still works */ }
-  prevData={}; dayCache={}; heatseekerDates=[];
-  // Clear spot-price cache too — new ticker needs a fresh price lookup
-  Object.keys(spotPriceCache).forEach(k => delete spotPriceCache[k]);
+
+  // Multi-ticker mode: do NOT wipe dayCache / spotPriceCache here. Other tickers
+  // tracked in the chip bar keep their cached data so the user can flip back to
+  // them without re-fetching. Only ticker-specific UI state gets reset.
+  prevData = {};
+  heatseekerDates = [];
+  currentTicker = ticker;
+  addTrackedTicker(ticker);
   if(gexChart){ gexChart.destroy(); gexChart=null; }
+
   document.getElementById('stop-btn').style.display='';
   // Reset Fetch buttons to default state (Fetch 5 active, Fetch 10 inactive)
   const _b5  = document.getElementById('btn-heatseeker-5');
@@ -2402,7 +2963,7 @@ async function startDash() {
   if (_b10) { _b10.classList.remove('active'); _b10.disabled = false; _b10.textContent = '⚡ FETCH 10'; }
   setEl('h-sym', ticker);
   const hNameEl2 = document.getElementById('h-name');
-  if (hNameEl2) hNameEl2.innerHTML = `${getCompanyName(ticker)} <span class="uw-tag">🐋 UW</span>`;
+  if (hNameEl2) hNameEl2.textContent = getCompanyName(ticker);
   log('Started: '+ticker,'ok');
 
   // Rebuild expiration dates based on ticker class (0 API calls)
@@ -2413,6 +2974,9 @@ async function startDash() {
     const clsLabel = cls === 'daily' ? 'daily M-F' : cls === 'mwf' ? 'Mon/Wed/Fri weeklies' : 'Friday weeklies';
     log(ticker+' expiration pattern: '+clsLabel+' — '+tickerDates.join(', '),'ok');
   }
+
+  renderTickerChips();
+  startChipAgeTimer();
 
   await fetchAll();
   clearInterval(timer);
@@ -2458,6 +3022,35 @@ function startClock() {
 
 startClock();
 initDates();
+renderTickerChips();  // show any persisted tickers from previous session
+
+// Sync Voltick patterns toggle button to match persisted preference
+(function syncVoltickToggleButton(){
+  const btn = document.getElementById('btn-voltick-patterns');
+  if (btn) btn.classList.toggle('patterns-active', showVoltickPatterns);
+})();
+
+// ── Calendar midnight-refresh safety measure ──
+// The Investing.com iframe uses calType=week which is "current week", determined
+// at page load. If the dashboard sits open through a Sunday-to-Monday transition,
+// the iframe could be showing last week's events. This schedules a soft reload
+// at midnight local time so the new week's data is always current without
+// requiring the user to refresh manually.
+function scheduleMidnightCalendarRefresh() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setHours(24, 0, 5, 0); // 12:00:05 AM next day (5s buffer past midnight)
+  const msUntilMidnight = tomorrow - now;
+  setTimeout(() => {
+    const f = document.getElementById('econ-calendar-frame');
+    if (f) {
+      // Setting src to itself triggers a full iframe reload — picks up new "current week"
+      f.src = f.src;
+    }
+    scheduleMidnightCalendarRefresh();  // schedule the next midnight refresh
+  }, msUntilMidnight);
+}
+scheduleMidnightCalendarRefresh();
 
 // ── Sync HeatSeeker height to match the combined left-column height ──
 // CSS Grid can't constrain a multi-row-spanning item's height based on other
